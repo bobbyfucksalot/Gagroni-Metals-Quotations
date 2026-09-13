@@ -703,11 +703,11 @@ export default function QuoteDocument({
             <div style={{ fontWeight: '700' }}>for {settings.companyName}</div>
 
             {(quote.signature?.imageUrl || settings.signatureUrl) ? (
-              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0', border: 'none', outline: 'none' }}>
                 <img
                   src={quote.signature?.imageUrl || settings.signatureUrl}
                   alt="Digital Signature"
-                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block', border: 'none', outline: 'none', boxShadow: 'none' }}
                 />
               </div>
             ) : (
@@ -984,11 +984,11 @@ export default function QuoteDocument({
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '10px', color: '#64748B' }}>Authorized Signatory</div>
             {(quote.signature?.imageUrl || settings.signatureUrl) ? (
-              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0', border: 'none', outline: 'none' }}>
                 <img
                   src={quote.signature?.imageUrl || settings.signatureUrl}
                   alt="Signature"
-                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block', border: 'none', outline: 'none', boxShadow: 'none' }}
                 />
               </div>
             ) : (
@@ -1254,11 +1254,11 @@ export default function QuoteDocument({
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '10px', color: '#71717A' }}>Authorized Signatory</div>
             {(quote.signature?.imageUrl || settings.signatureUrl) ? (
-              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0', border: 'none', outline: 'none' }}>
                 <img
                   src={quote.signature?.imageUrl || settings.signatureUrl}
                   alt="Signature"
-                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block', border: 'none', outline: 'none', boxShadow: 'none' }}
                 />
               </div>
             ) : (
@@ -1493,11 +1493,11 @@ export default function QuoteDocument({
         <div style={{ textAlign: 'right' }}>
           <div>For <strong>{settings.companyName}</strong></div>
           {(quote.signature?.imageUrl || settings.signatureUrl) ? (
-            <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+            <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0', border: 'none', outline: 'none' }}>
               <img
                 src={quote.signature?.imageUrl || settings.signatureUrl}
                 alt="Authorized Signature"
-                style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+                style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block', border: 'none', outline: 'none', boxShadow: 'none' }}
               />
             </div>
           ) : (
