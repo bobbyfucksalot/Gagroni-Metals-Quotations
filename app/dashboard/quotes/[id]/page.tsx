@@ -23,6 +23,7 @@ import {
   Sparkles,
   RefreshCw,
   Upload,
+  Edit3,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -308,6 +309,25 @@ export default function SingleQuotePage() {
                 <button onClick={handleWhatsAppShare} className="btn-secondary" style={{ height: '36px', fontSize: '12px', color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5' }}>
                   <Phone size={14} /> WhatsApp
                 </button>
+
+                <Link
+                  href={`/dashboard/quotes/${quote.id}/edit`}
+                  className="btn-secondary"
+                  style={{
+                    height: '36px',
+                    fontSize: '12px',
+                    borderColor: '#93C5FD',
+                    color: '#1D4ED8',
+                    background: '#EFF6FF',
+                    fontWeight: '700',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <Edit3 size={14} /> Edit Quotation
+                </Link>
 
                 <button onClick={handlePrint} className="btn-secondary" style={{ height: '36px', fontSize: '12px' }}>
                   <Printer size={14} /> Print

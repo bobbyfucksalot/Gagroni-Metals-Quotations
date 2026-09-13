@@ -19,6 +19,8 @@ import {
   Image as ImageIcon,
   ChevronDown,
   ChevronUp,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -296,18 +298,126 @@ export default function CatalogPage() {
             </div>
           </div>
 
+          {/* Loading Indicator Banner */}
+          {loading && (
+            <div
+              style={{
+                marginBottom: '20px',
+                padding: '16px 20px',
+                background: '#FFFFFF',
+                border: '1px solid var(--accent-emerald-border)',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: 'var(--shadow-card)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'var(--accent-emerald-light)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-emerald)',
+                  }}
+                >
+                  <Loader2 size={20} className="qc-spin" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    Loading Product &amp; Alloy Catalog...
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    Synchronizing Stainless Steel (304/316), MS, Brass profiles, and live pricing.
+                  </div>
+                </div>
+              </div>
+              <span
+                className="qc-pulse-glow"
+                style={{
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  color: 'var(--accent-emerald)',
+                  background: 'var(--accent-emerald-light)',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--accent-emerald-border)',
+                }}
+              >
+                ● Fetching Inventory
+              </span>
+            </div>
+          )}
+
           {/* Catalog Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '16px' }}>
-            {filteredProducts.map((product) => {
-              const discountPercent =
-                product.mrp > product.offerPrice
-                  ? Math.round(((product.mrp - product.offerPrice) / product.mrp) * 100)
-                  : 0;
-              const isDescExpanded = !!expandedDesc[product.id];
-              const isLongDesc = (product.description || '').length > 80;
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="qc-card"
+                  style={{
+                    padding: 0,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-color)',
+                    background: '#FFFFFF',
+                  }}
+                >
+                  {/* Visual Header Skeleton */}
+                  <div className="qc-skeleton" style={{ width: '100%', height: '145px', borderRadius: '10px 10px 0 0' }} />
 
-              return (
-                <div key={product.id} className="qc-card qc-card-hover" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: '10px' }}>
+                  <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* Category & SKU Pill Skeleton */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div className="qc-skeleton" style={{ width: '70px', height: '18px', borderRadius: '4px' }} />
+                      <div className="qc-skeleton" style={{ width: '80px', height: '14px', borderRadius: '4px' }} />
+                    </div>
+
+                    {/* Title Skeleton */}
+                    <div className="qc-skeleton" style={{ width: '85%', height: '18px' }} />
+
+                    {/* Description Lines Skeleton */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div className="qc-skeleton" style={{ width: '100%', height: '12px' }} />
+                      <div className="qc-skeleton" style={{ width: '75%', height: '12px' }} />
+                    </div>
+
+                    {/* Price Box Skeleton */}
+                    <div style={{ background: '#FAFAF9', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}>
+                      <div className="qc-skeleton" style={{ width: '50px', height: '10px', marginBottom: '6px' }} />
+                      <div className="qc-skeleton" style={{ width: '110px', height: '22px' }} />
+                    </div>
+
+                    {/* Actions Skeleton */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid var(--border-subtle)' }}>
+                      <div className="qc-skeleton" style={{ width: '80px', height: '16px' }} />
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <div className="qc-skeleton" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+                        <div className="qc-skeleton" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => {
+                const discountPercent =
+                  product.mrp > product.offerPrice
+                    ? Math.round(((product.mrp - product.offerPrice) / product.mrp) * 100)
+                    : 0;
+                const isDescExpanded = !!expandedDesc[product.id];
+                const isLongDesc = (product.description || '').length > 80;
+
+                return (
+                  <div key={product.id} className="qc-card qc-card-hover" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: '10px' }}>
                   {/* Product Visual Header */}
                   {product.imageUrl ? (
                     <div style={{ position: 'relative', width: '100%', height: '145px', background: '#F4F4F5', overflow: 'hidden', borderBottom: '1px solid var(--border-subtle)' }}>
@@ -445,8 +555,51 @@ export default function CatalogPage() {
                   </div>
                 </div>
               );
-            })}
-          </div>
+            })
+          ) : (
+            <div
+              style={{
+                gridColumn: '1 / -1',
+                background: '#FFFFFF',
+                border: '1px dashed var(--border-color)',
+                borderRadius: '12px',
+                padding: '54px 24px',
+                textAlign: 'center',
+              }}
+            >
+              <Package size={40} style={{ color: 'var(--text-muted)', margin: '0 auto 14px' }} />
+              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                No Products Found in Catalog
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 auto 16px' }}>
+                {searchQuery || selectedCategory !== 'All'
+                  ? `No products match category "${selectedCategory}" or search query "${searchQuery}".`
+                  : 'Your inventory catalog is currently empty. Click below to add your first metal product or alloy profile.'}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                {(searchQuery || selectedCategory !== 'All') && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedCategory('All');
+                    }}
+                    className="btn-secondary"
+                    style={{ height: '34px', fontSize: '12px' }}
+                  >
+                    Clear Filters
+                  </button>
+                )}
+                <button
+                  onClick={handleOpenAddModal}
+                  className="btn-primary"
+                  style={{ height: '34px', fontSize: '12px' }}
+                >
+                  <Plus size={14} /> Add Product
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
           {/* Add / Edit Product Modal */}
           {showModal && (

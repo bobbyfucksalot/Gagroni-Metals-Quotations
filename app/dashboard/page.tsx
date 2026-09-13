@@ -19,6 +19,7 @@ import {
   Building,
   Layers,
   ArrowUpRight,
+  Edit3,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -465,6 +466,13 @@ export default function DashboardPage() {
                                 style={{ height: '32px', fontSize: '12px', padding: '0 8px' }}
                               >
                                 <ExternalLink size={13} /> View / Print
+                              </Link>
+                              <Link
+                                href={`/dashboard/quotes/${q.id}/edit`}
+                                className="qc-nav-item"
+                                style={{ height: '32px', fontSize: '12px', padding: '0 8px', color: '#2563EB', fontWeight: '600' }}
+                              >
+                                <Edit3 size={13} /> Edit Quotation
                               </Link>
                               <button
                                 onClick={() => {

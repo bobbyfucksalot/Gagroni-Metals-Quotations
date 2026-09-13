@@ -484,7 +484,7 @@ export default function QuoteDocument({
                 <th style={{ padding: '6px 6px', width: '70px', textAlign: 'center', borderRight: '1px solid #000000' }}>HSN/SAC</th>
               )}
               <th style={{ padding: '6px 6px', width: '65px', textAlign: 'center', borderRight: '1px solid #000000' }}>QUANTITY</th>
-              <th style={{ padding: '6px 8px', width: '85px', textAlign: 'right', borderRight: '1px solid #000000' }}>
+              <th style={{ padding: '6px 8px', width: '95px', textAlign: 'right', borderRight: '1px solid #000000' }}>
                 RATE ({currency})
               </th>
               <th style={{ padding: '6px 6px', width: '45px', textAlign: 'center', borderRight: '1px solid #000000' }}>PER</th>
@@ -530,8 +530,24 @@ export default function QuoteDocument({
                 <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'top', fontWeight: '700', borderRight: '1px solid #000000' }}>
                   {item.qty.toFixed(2)} {item.unit}
                 </td>
-                <td style={{ padding: '8px 8px', textAlign: 'right', verticalAlign: 'top', borderRight: '1px solid #000000', fontVariantNumeric: 'tabular-nums', fontWeight: '700' }}>
-                  {formatMoney(item.unitPrice)}
+                <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'top', borderRight: '1px solid #000000' }}>
+                  {item.mrp && item.mrp > item.unitPrice ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                      <div style={{ fontSize: '9px', color: '#64748B', textDecoration: 'line-through', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        MRP {formatMoney(item.mrp)}
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#000000', fontVariantNumeric: 'tabular-nums', lineHeight: '1.2' }}>
+                        {formatMoney(item.unitPrice)}
+                      </div>
+                      <div style={{ fontSize: '9px', fontWeight: '700', color: '#047857', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        Disc: -{formatMoney(item.mrp - item.unitPrice)}
+                      </div>
+                    </div>
+                  ) : (
+                    <span style={{ fontWeight: '700', fontVariantNumeric: 'tabular-nums' }}>
+                      {formatMoney(item.unitPrice)}
+                    </span>
+                  )}
                 </td>
                 <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'top', borderRight: '1px solid #000000', color: '#555555' }}>
                   {item.unit}
@@ -836,8 +852,24 @@ export default function QuoteDocument({
                 </td>
                 {modules.hsnCodes && <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', color: '#64748B', fontFamily: 'monospace' }}>{item.hsnCode}</td>}
                 <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', fontWeight: '600' }}>{item.qty} {item.unit}</td>
-                <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontVariantNumeric: 'tabular-nums', fontWeight: '700', color: '#0F172A' }}>
-                  {formatMoney(item.unitPrice)}
+                <td style={{ padding: '8px 10px', textAlign: 'right', verticalAlign: 'top' }}>
+                  {item.mrp && item.mrp > item.unitPrice ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                      <div style={{ fontSize: '9px', color: '#64748B', textDecoration: 'line-through', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        MRP {formatMoney(item.mrp)}
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#0F172A', fontVariantNumeric: 'tabular-nums', lineHeight: '1.2' }}>
+                        {formatMoney(item.unitPrice)}
+                      </div>
+                      <div style={{ fontSize: '9px', fontWeight: '700', color: '#047857', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        Disc: -{formatMoney(item.mrp - item.unitPrice)}
+                      </div>
+                    </div>
+                  ) : (
+                    <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: '700', color: '#0F172A' }}>
+                      {formatMoney(item.unitPrice)}
+                    </span>
+                  )}
                 </td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', color: '#64748B' }}>{item.taxRate}%</td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '700', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.qty * item.unitPrice)}</td>
@@ -1094,8 +1126,24 @@ export default function QuoteDocument({
                 </td>
                 {modules.hsnCodes && <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', color: '#71717A', fontFamily: 'monospace' }}>{item.hsnCode}</td>}
                 <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', fontWeight: '600' }}>{item.qty} {item.unit}</td>
-                <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontVariantNumeric: 'tabular-nums', fontWeight: '700', color: '#18181B' }}>
-                  {formatMoney(item.unitPrice)}
+                <td style={{ padding: '8px 10px', textAlign: 'right', verticalAlign: 'top' }}>
+                  {item.mrp && item.mrp > item.unitPrice ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                      <div style={{ fontSize: '9px', color: '#71717A', textDecoration: 'line-through', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        MRP {formatMoney(item.mrp)}
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#047857', fontVariantNumeric: 'tabular-nums', lineHeight: '1.2' }}>
+                        {formatMoney(item.unitPrice)}
+                      </div>
+                      <div style={{ fontSize: '9px', fontWeight: '700', color: '#047857', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        Disc: -{formatMoney(item.mrp - item.unitPrice)}
+                      </div>
+                    </div>
+                  ) : (
+                    <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: '700', color: '#18181B' }}>
+                      {formatMoney(item.unitPrice)}
+                    </span>
+                  )}
                 </td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', color: '#71717A' }}>{item.taxRate}%</td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '700', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.qty * item.unitPrice)}</td>
@@ -1317,8 +1365,24 @@ export default function QuoteDocument({
               <td style={{ padding: '8px 6px', verticalAlign: 'top' }}>{item.description}</td>
               {modules.hsnCodes && <td style={{ padding: '8px 6px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'top' }}>{item.hsnCode}</td>}
               <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'top' }}>{item.qty} {item.unit}</td>
-              <td style={{ padding: '8px 6px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top', fontWeight: '700' }}>
-                {formatMoney(item.unitPrice)}
+              <td style={{ padding: '6px 6px', textAlign: 'right', verticalAlign: 'top' }}>
+                {item.mrp && item.mrp > item.unitPrice ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                    <div style={{ fontSize: '9px', color: '#64748B', textDecoration: 'line-through', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                      MRP {formatMoney(item.mrp)}
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#000000', fontVariantNumeric: 'tabular-nums', lineHeight: '1.2' }}>
+                      {formatMoney(item.unitPrice)}
+                    </div>
+                    <div style={{ fontSize: '9px', fontWeight: '700', color: '#047857', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                      Disc: -{formatMoney(item.mrp - item.unitPrice)}
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: '700' }}>
+                    {formatMoney(item.unitPrice)}
+                  </span>
+                )}
               </td>
               <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: '700', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top' }}>{formatMoney(item.qty * item.unitPrice)}</td>
             </tr>

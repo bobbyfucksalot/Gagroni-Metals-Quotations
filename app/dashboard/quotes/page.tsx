@@ -13,6 +13,7 @@ import {
   Trash2,
   FileSpreadsheet,
   Share2,
+  Edit3,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -213,9 +214,22 @@ export default function QuotesListPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredQuotes.map((q) => (
-                  <tr key={q.id}>
-                    <td style={{ fontWeight: '700' }}>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={`quote-skeleton-${i}`}>
+                      <td style={{ padding: '16px' }}><div className="qc-skeleton" style={{ width: '110px', height: '18px' }} /></td>
+                      <td style={{ padding: '16px' }}><div className="qc-skeleton" style={{ width: '140px', height: '18px' }} /></td>
+                      <td style={{ padding: '16px' }}><div className="qc-skeleton" style={{ width: '180px', height: '18px' }} /></td>
+                      <td style={{ padding: '16px' }}><div className="qc-skeleton" style={{ width: '70px', height: '22px', borderRadius: '4px' }} /></td>
+                      <td style={{ padding: '16px' }}><div className="qc-skeleton" style={{ width: '90px', height: '16px' }} /></td>
+                      <td style={{ padding: '16px', textAlign: 'right' }}><div className="qc-skeleton" style={{ width: '80px', height: '18px', marginLeft: 'auto' }} /></td>
+                      <td style={{ padding: '16px', textAlign: 'center' }}><div className="qc-skeleton" style={{ width: '24px', height: '24px', margin: '0 auto', borderRadius: '4px' }} /></td>
+                    </tr>
+                  ))
+                ) : filteredQuotes.length > 0 ? (
+                  filteredQuotes.map((q) => (
+                    <tr key={q.id}>
+                      <td style={{ fontWeight: '700' }}>
                       <Link
                         href={`/dashboard/quotes/${q.id}`}
                         style={{ color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -281,6 +295,13 @@ export default function QuotesListPage() {
                           >
                             <ExternalLink size={13} /> View / Print
                           </Link>
+                          <Link
+                            href={`/dashboard/quotes/${q.id}/edit`}
+                            className="qc-nav-item"
+                            style={{ height: '32px', fontSize: '12px', padding: '0 8px', color: '#2563EB', fontWeight: '600' }}
+                          >
+                            <Edit3 size={13} /> Edit Quotation
+                          </Link>
                           <button
                             onClick={() => {
                               handleDuplicate(q);
@@ -305,17 +326,16 @@ export default function QuotesListPage() {
                       )}
                     </td>
                   </tr>
-                ))}
-
-                {filteredQuotes.length === 0 && (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                      <FileSpreadsheet size={32} style={{ margin: '0 auto 12px', color: 'var(--text-muted)' }} />
-                      <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>No quotations found</div>
-                      <div style={{ fontSize: '12px', marginTop: '4px' }}>Try changing the search query or active filter tab.</div>
-                    </td>
-                  </tr>
-                )}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
+                    <FileSpreadsheet size={32} style={{ margin: '0 auto 12px', color: 'var(--text-muted)' }} />
+                    <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>No quotations found</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px' }}>Try changing the search query or active filter tab.</div>
+                  </td>
+                </tr>
+              )}
               </tbody>
             </table>
           </div>
