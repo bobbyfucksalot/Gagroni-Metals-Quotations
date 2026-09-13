@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { getSession, getAdminAccount, updateAdminAccount, createSession, COOKIE_NAME } from '@/lib/auth';
+import { getSession, getAdminAccount, updateAdminAccount, createSession, COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
 import { store } from '@/lib/store';
 
 export async function GET() {
@@ -126,7 +126,8 @@ export async function PUT(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: SESSION_MAX_AGE, // 12 hours
+      expires: new Date(Date.now() + SESSION_MAX_AGE * 1000),
     });
 
     return response;

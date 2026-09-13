@@ -8,6 +8,8 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 export const COOKIE_NAME = 'quotecraft_session';
+export const SESSION_MAX_AGE = 12 * 60 * 60; // 12 hours (43,200 seconds)
+export const SESSION_EXPIRATION_STR = '12h';
 
 export interface AdminAccount {
   email: string;
@@ -47,7 +49,7 @@ export async function createSession(email: string, name: string): Promise<string
   const token = await new SignJWT({ email, name, role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime(SESSION_EXPIRATION_STR) // 12 hours active session
     .sign(JWT_SECRET);
 
   return token;

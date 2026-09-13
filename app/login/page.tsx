@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 function LoginForm() {
   const router = useRouter();
@@ -149,8 +150,13 @@ export default function LoginPage() {
         justifyContent: 'center',
         alignItems: 'center',
         padding: '24px',
+        position: 'relative',
       }}
     >
+      <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+        <ThemeToggle variant="compact" />
+      </div>
+
       {/* Brand Header */}
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>

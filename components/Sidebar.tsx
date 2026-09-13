@@ -16,6 +16,8 @@ import {
   Download,
 } from 'lucide-react';
 
+import ThemeToggle from '@/components/ThemeToggle';
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -198,8 +200,11 @@ export default function Sidebar() {
           </button>
         )}
 
+        {/* Dark / Light Mode Switch */}
+        <ThemeToggle variant="sidebar" />
+
         {/* User Card */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
           <Link
             href="/dashboard/settings?tab=profile"
             style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', flex: 1, minWidth: 0 }}

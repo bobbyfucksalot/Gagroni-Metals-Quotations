@@ -33,6 +33,40 @@
     --shadow-dropdown: 0 10px 38px -10px rgba(22, 23, 24, 0.35), 0 10px 20px -15px rgba(22, 23, 24, 0.2);
   }
 
+  :root.dark,
+  html.dark,
+  [data-theme='dark'] {
+    --bg-page: #0B0D13;
+    --bg-surface: #12151F;
+    --border-color: #222736;
+    --border-subtle: #191D28;
+    --text-primary: #F3F4F6;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    
+    /* Accent - Luminous Emerald */
+    --accent-emerald: #10B981;
+    --accent-emerald-hover: #059669;
+    --accent-emerald-light: rgba(16, 185, 129, 0.14);
+    --accent-emerald-border: rgba(16, 185, 129, 0.28);
+    
+    /* Status Colors */
+    --status-paid: #34D399;
+    --status-paid-bg: rgba(16, 185, 129, 0.15);
+    --status-sent: #FBBF24;
+    --status-sent-bg: rgba(245, 158, 11, 0.15);
+    --status-overdue: #F87171;
+    --status-overdue-bg: rgba(239, 68, 68, 0.15);
+    --status-draft: #9CA3AF;
+    --status-draft-bg: rgba(156, 163, 175, 0.15);
+    --status-accepted: #38BDF8;
+    --status-accepted-bg: rgba(14, 165, 233, 0.15);
+    
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.45);
+    --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.65);
+    --shadow-dropdown: 0 10px 38px -10px rgba(0, 0, 0, 0.8), 0 10px 20px -15px rgba(0, 0, 0, 0.6);
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -570,4 +604,169 @@
 .qc-pulse-glow {
   animation: qc-pulse-glow 1.6s ease-in-out infinite;
 }
+
+/* ==========================================================================
+   DARK MODE COMPONENT STYLES & LUXURY POLISH
+   ========================================================================== */
+html.dark body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+html.dark .qc-layout {
+  background-color: var(--bg-page);
+}
+
+html.dark .qc-sidebar {
+  background: #0E1017;
+  border-right-color: #1F2432;
+}
+
+html.dark .qc-header {
+  background: rgba(14, 16, 23, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom-color: #1F2432;
+}
+
+html.dark .qc-card {
+  background: var(--bg-surface);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .qc-card-hover:hover {
+  border-color: #2F3648;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* Form inputs & controls in dark mode */
+html.dark .qc-input,
+html.dark .qc-textarea,
+html.dark select.qc-input {
+  background-color: #161924 !important;
+  color: #F3F4F6 !important;
+  border-color: #262B3B !important;
+}
+
+html.dark .qc-input::placeholder,
+html.dark .qc-textarea::placeholder {
+  color: #64748B !important;
+}
+
+html.dark .qc-input:focus,
+html.dark .qc-textarea:focus,
+html.dark select.qc-input:focus {
+  border-color: var(--accent-emerald) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Button secondary */
+html.dark .btn-secondary {
+  background-color: #181B26;
+  color: #E2E8F0;
+  border-color: #282D3D;
+}
+
+html.dark .btn-secondary:hover {
+  background-color: #222635;
+  border-color: #384156;
+  color: #FFFFFF;
+}
+
+/* Tables */
+html.dark .qc-table th {
+  border-bottom-color: #222736;
+  color: var(--text-muted);
+  background-color: transparent;
+}
+
+html.dark .qc-table td {
+  border-bottom-color: #181B26;
+  color: var(--text-primary);
+}
+
+html.dark .qc-table tbody tr:hover td {
+  background-color: #171B26;
+}
+
+/* Navigation items */
+html.dark .qc-nav-item {
+  color: #9CA3AF;
+}
+
+html.dark .qc-nav-item:hover {
+  background-color: #171A24;
+  color: #F3F4F6;
+}
+
+html.dark .qc-nav-item.active {
+  background-color: rgba(16, 185, 129, 0.16);
+  color: #34D399;
+}
+
+/* Modals */
+html.dark .qc-modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+html.dark .qc-modal-content {
+  background-color: #12151F;
+  border-color: #242938;
+  color: #F3F4F6;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+}
+
+/* Common nested light backgrounds converted for dark mode */
+html.dark div[style*="background: #FAFAF9"],
+html.dark div[style*="background: rgb(250, 250, 249)"],
+html.dark div[style*="background-color: #FAFAF9"],
+html.dark div[style*="background: #FAFAFA"],
+html.dark div[style*="background-color: #FAFAFA"],
+html.dark div[style*="background: #F9FAFB"],
+html.dark div[style*="background-color: #F9FAFB"],
+html.dark div[style*="background: #F8FAFC"],
+html.dark div[style*="background-color: #F8FAFC"] {
+  background-color: #161924 !important;
+  border-color: #222736 !important;
+}
+
+html.dark div[style*="background: #F4F4F5"],
+html.dark div[style*="background-color: #F4F4F5"] {
+  background-color: #181B27 !important;
+  border-color: #262B3B !important;
+}
+
+/* Auto-fill dropdown & select options */
+html.dark select option {
+  background-color: #12151F;
+  color: #F3F4F6;
+}
+
+/* Dark scrollbars */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0B0D13;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #242938;
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Print view stays pristine white */
+@media print {
+  html.dark, html.dark body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+}
+
 

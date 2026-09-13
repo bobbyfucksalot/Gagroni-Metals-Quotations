@@ -154,7 +154,7 @@ export interface Client {
   taxId: string; // GSTIN
   state?: string;
   stateCode?: string;
-  category: 'Enterprise' | 'Commercial' | 'Retail' | 'Fabricator';
+  category: string;
   notes?: string;
   createdAt: string;
 }

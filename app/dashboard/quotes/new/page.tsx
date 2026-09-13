@@ -79,15 +79,18 @@ export default function NewQuotePage() {
   }
 
   const DEFAULT_EXTRA_FIELDS: ExtraFieldItem[] = [
-    { id: 'f-1', label: 'Delivery Note', value: 'DN-GM-2026-890' },
-    { id: 'f-2', label: "Supplier's Ref.", value: 'SUP-0046' },
-    { id: 'f-3', label: 'Other Reference(s)', value: 'RFQ-2026-CORP' },
-    { id: 'f-4', label: "Buyer's Order No.", value: 'PO-PENDING' },
-    { id: 'f-5', label: 'Dispatched Through', value: 'Cargo / Direct Road' },
-    { id: 'f-6', label: 'Destination', value: 'Mumbai / Site' },
-    { id: 'f-7', label: 'Terms of Delivery', value: 'FOB Destination / Fully Insured' },
-    { id: 'f-8', label: 'Payment Terms', value: 'Net 30 Days from Dispatch Inspection' },
+    { id: 'f-1', label: "Buyer's Order No.", value: 'PO-PENDING' },
+    { id: 'f-2', label: 'Dispatched Through', value: 'Cargo / Direct Road' },
+    { id: 'f-3', label: 'Destination', value: '' },
+    { id: 'f-4', label: 'Terms of Delivery', value: 'After payment confirmation' },
+    { id: 'f-5', label: 'Payment Terms', value: '25% Advance' },
+    { id: 'f-6', label: 'Estimated Dispatch', value: '' },
+    { id: 'f-7', label: 'Contact Person', value: '' },
+    { id: 'f-8', label: 'Transport Name', value: '' },
   ];
+
+  const DEFAULT_CUSTOMER_GREETING =
+    'Following our recent discussion regarding your project requirements, we are pleased to submit our competitive commercial quotation for your review. We have ensured that the enclosed machine specifications align with the high standards of efficiency and long-term reliability your operations demand.\n\nThank you for reaching out to Gagroni Metals. We truly appreciate your interest in our equipment and the opportunity to support your project’s operational needs.';
 
   const [extraFields, setExtraFields] = useState<ExtraFieldItem[]>(DEFAULT_EXTRA_FIELDS);
 
@@ -134,9 +137,7 @@ export default function NewQuotePage() {
   ];
 
   const [termsClauses, setTermsClauses] = useState<string[]>(DEFAULT_CLAUSES);
-  const [customerGreeting, setCustomerGreeting] = useState(
-    'Thank you for considering Gagroni Metals Private Limited. We look forward to partnering with your procurement team.'
-  );
+  const [customerGreeting, setCustomerGreeting] = useState(DEFAULT_CUSTOMER_GREETING);
 
   const handleAddClause = () => {
     setTermsClauses([...termsClauses, '']);
@@ -499,6 +500,9 @@ export default function NewQuotePage() {
       else if (lower.includes('destination')) obj.destination = f.value;
       else if (lower.includes('terms of delivery') || lower.includes('incoterm')) obj.termsOfDelivery = f.value;
       else if (lower.includes('payment term')) obj.paymentTerms = f.value;
+      else if (lower.includes('estimated dispatch') || lower.includes('dispatch date')) obj.deliveryTime = f.value;
+      else if (lower.includes('contact person')) obj.contactPerson = f.value;
+      else if (lower.includes('transport name') || lower.includes('transport')) obj.transportName = f.value;
     });
     return obj;
   };

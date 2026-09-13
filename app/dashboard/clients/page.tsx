@@ -15,12 +15,15 @@ import {
   X,
   PlusCircle,
   ExternalLink,
+  Tag,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import { Client, Quote } from '@/types';
 import { formatINR, INDIAN_STATES, getGstStateCode } from '@/lib/tax-engine';
+
+const DEFAULT_CATEGORIES = ['Enterprise', 'Commercial', 'Fabricator', 'Retail'];
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -29,6 +32,13 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [toastMessage, setToastMessage] = useState('');
+
+  // Category Management State
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [showAddCategoryInput, setShowAddCategoryInput] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [showCategoryManagerModal, setShowCategoryManagerModal] = useState(false);
+  const [managerNewCategory, setManagerNewCategory] = useState('');
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -42,7 +52,7 @@ export default function ClientsPage() {
     taxId: '',
     state: 'Rajasthan',
     stateCode: '08',
-    category: 'Commercial' as Client['category'],
+    category: 'Commercial',
     notes: '',
   });
 
@@ -73,7 +83,88 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchData();
+    try {
+      const stored = localStorage.getItem('gagroni_client_categories');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setCustomCategories(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
   }, []);
+
+  const saveCustomCategories = (cats: string[]) => {
+    setCustomCategories(cats);
+    try {
+      localStorage.setItem('gagroni_client_categories', JSON.stringify(cats));
+    } catch {
+      // ignore
+    }
+  };
+
+  const allCategories = useMemo(() => {
+    const list = [...DEFAULT_CATEGORIES];
+    customCategories.forEach((cat) => {
+      const c = cat.trim();
+      if (c && !list.some((existing) => existing.toLowerCase() === c.toLowerCase())) {
+        list.push(c);
+      }
+    });
+    clients.forEach((client) => {
+      const c = client.category?.trim();
+      if (c && !list.some((existing) => existing.toLowerCase() === c.toLowerCase())) {
+        list.push(c);
+      }
+    });
+    return list;
+  }, [clients, customCategories]);
+
+  const handleAddCategory = (name: string, shouldSelect: boolean = true) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      showToast('Please enter a category name');
+      return null;
+    }
+    const existing = allCategories.find((c) => c.toLowerCase() === trimmed.toLowerCase());
+    if (existing) {
+      if (shouldSelect) {
+        setFormData((prev) => ({ ...prev, category: existing }));
+      }
+      setShowAddCategoryInput(false);
+      setNewCategoryInput('');
+      setManagerNewCategory('');
+      showToast(`Category "${existing}" selected`);
+      return existing;
+    }
+
+    const updated = [...customCategories, trimmed];
+    saveCustomCategories(updated);
+    if (shouldSelect) {
+      setFormData((prev) => ({ ...prev, category: trimmed }));
+    }
+    setShowAddCategoryInput(false);
+    setNewCategoryInput('');
+    setManagerNewCategory('');
+    showToast(`New category "${trimmed}" added!`);
+    return trimmed;
+  };
+
+  const handleDeleteCategory = (catToDelete: string) => {
+    const clientsUsing = clients.filter((c) => c.category?.toLowerCase() === catToDelete.toLowerCase());
+    if (clientsUsing.length > 0) {
+      alert(`Cannot remove "${catToDelete}" because ${clientsUsing.length} client(s) are assigned to this category.`);
+      return;
+    }
+    const updated = customCategories.filter((c) => c.toLowerCase() !== catToDelete.toLowerCase());
+    saveCustomCategories(updated);
+    if (selectedCategory.toLowerCase() === catToDelete.toLowerCase()) {
+      setSelectedCategory('All');
+    }
+    showToast(`Category "${catToDelete}" removed`);
+  };
 
   const filteredClients = useMemo(() => {
     return clients.filter((c) => {
@@ -91,6 +182,8 @@ export default function ClientsPage() {
 
   const handleOpenAddModal = () => {
     setEditingClient(null);
+    setShowAddCategoryInput(false);
+    setNewCategoryInput('');
     setFormData({
       name: '',
       contactPerson: '',
@@ -108,6 +201,8 @@ export default function ClientsPage() {
 
   const handleOpenEditModal = (client: Client) => {
     setEditingClient(client);
+    setShowAddCategoryInput(false);
+    setNewCategoryInput('');
     setFormData({
       name: client.name,
       contactPerson: client.contactPerson,
@@ -197,8 +292,8 @@ export default function ClientsPage() {
           {/* Filters & Search */}
           <div className="qc-card" style={{ padding: '16px 20px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div style={{ display: 'flex', gap: '6px', background: '#F4F4F5', padding: '4px', borderRadius: '8px' }}>
-                {['All', 'Enterprise', 'Commercial', 'Fabricator', 'Retail'].map((cat) => (
+              <div style={{ display: 'flex', gap: '6px', background: '#F4F4F5', padding: '4px', borderRadius: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {['All', ...allCategories].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
@@ -217,6 +312,27 @@ export default function ClientsPage() {
                     {cat}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryManagerModal(true)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px dashed #D1D5DB',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: 'var(--text-secondary)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                  title="Manage Client Categories"
+                >
+                  <Tag size={13} style={{ color: 'var(--accent-emerald)' }} />
+                  <span>Categories</span>
+                </button>
               </div>
 
               <div style={{ position: 'relative', width: '280px' }}>
@@ -449,19 +565,106 @@ export default function ClientsPage() {
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>
-                        Client Category
-                      </label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: '600', margin: 0 }}>
+                          Client Category
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddCategoryInput((prev) => !prev)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--accent-emerald)',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            padding: 0,
+                          }}
+                        >
+                          <Plus size={12} /> {showAddCategoryInput ? 'Close' : 'Add Category'}
+                        </button>
+                      </div>
+
                       <select
                         className="qc-input"
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                        onChange={(e) => {
+                          if (e.target.value === '__add_new__') {
+                            setShowAddCategoryInput(true);
+                          } else {
+                            setFormData({ ...formData, category: e.target.value });
+                          }
+                        }}
                       >
-                        <option value="Enterprise">Enterprise</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Fabricator">Fabricator</option>
-                        <option value="Retail">Retail</option>
+                        {allCategories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                        <option value="__add_new__" style={{ fontWeight: '700', color: 'var(--accent-emerald)' }}>
+                          + Add New Category...
+                        </option>
                       </select>
+
+                      {showAddCategoryInput && (
+                        <div
+                          style={{
+                            marginTop: '8px',
+                            padding: '10px 12px',
+                            background: '#F0FDF4',
+                            border: '1.5px solid #BBF7D0',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#166534' }}>
+                              Create & Select New Category
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowAddCategoryInput(false);
+                                setNewCategoryInput('');
+                              }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 0 }}
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <input
+                              type="text"
+                              autoFocus
+                              className="qc-input"
+                              style={{ fontSize: '12px', height: '34px', background: '#FFFFFF' }}
+                              placeholder="e.g. Wholesaler, Govt Contractor, Distributor..."
+                              value={newCategoryInput}
+                              onChange={(e) => setNewCategoryInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddCategory(newCategoryInput, true);
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddCategory(newCategoryInput, true)}
+                              className="btn-primary"
+                              style={{ height: '34px', padding: '0 12px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -564,6 +767,118 @@ export default function ClientsPage() {
                 <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
                   <button onClick={() => setSelectedClientHistory(null)} className="btn-secondary">
                     Close History
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Category Manager Modal */}
+          {showCategoryManagerModal && (
+            <div className="qc-modal-overlay">
+              <div className="qc-modal-content" style={{ maxWidth: '520px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div>
+                    <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
+                      Client Categories
+                    </h2>
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                      Add, view, and organize customer classification categories.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowCategoryManagerModal(false)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                  <input
+                    type="text"
+                    className="qc-input"
+                    placeholder="New category name (e.g. Wholesaler, Govt Contractor)..."
+                    value={managerNewCategory}
+                    onChange={(e) => setManagerNewCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCategory(managerNewCategory, false);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddCategory(managerNewCategory, false)}
+                    className="btn-primary"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    <Plus size={15} /> Add
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto' }}>
+                  {allCategories.map((cat) => {
+                    const clientCount = clients.filter((c) => c.category?.toLowerCase() === cat.toLowerCase()).length;
+                    const isDefault = DEFAULT_CATEGORIES.some((d) => d.toLowerCase() === cat.toLowerCase());
+                    const isCustom = !isDefault;
+
+                    return (
+                      <div
+                        key={cat}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '10px 14px',
+                          background: '#F9FAFB',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text-primary)' }}>
+                            {cat}
+                          </span>
+                          {isDefault ? (
+                            <span style={{ fontSize: '10px', background: '#E0E7FF', color: '#3730A3', padding: '1px 6px', borderRadius: '4px', fontWeight: '600' }}>
+                              Default
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '10px', background: '#ECFDF5', color: '#065F46', padding: '1px 6px', borderRadius: '4px', fontWeight: '600' }}>
+                              Custom
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            {clientCount} {clientCount === 1 ? 'client' : 'clients'}
+                          </span>
+                          {isCustom && clientCount === 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat)}
+                              style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                              title="Delete category"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryManagerModal(false)}
+                    className="btn-secondary"
+                  >
+                    Done
                   </button>
                 </div>
               </div>

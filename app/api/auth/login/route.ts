@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSession, verifyCredentials, COOKIE_NAME, getAdminAccount } from '@/lib/auth';
+import { createSession, verifyCredentials, COOKIE_NAME, getAdminAccount, SESSION_MAX_AGE } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -45,7 +45,8 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: SESSION_MAX_AGE, // 12 hours (43,200 seconds)
+      expires: new Date(Date.now() + SESSION_MAX_AGE * 1000),
     });
 
     return response;

@@ -20,6 +20,8 @@ import {
   QrCode,
   Trash2,
   PenTool,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -609,6 +611,77 @@ export default function SettingsPage() {
                       />
                     </label>
                   )}
+                </div>
+
+                {/* Workspace Appearance & Dark Mode */}
+                <div style={{ marginTop: '28px', paddingTop: '22px', borderTop: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <Palette size={16} style={{ color: 'var(--accent-emerald)' }} />
+                    <h3 style={{ fontSize: '14px', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
+                      Workspace Appearance &amp; Dark Mode
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 16px' }}>
+                    Choose your preferred workspace theme. Switch to midnight dark mode to work comfortably in low-light environments.
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', maxWidth: '480px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        document.documentElement.classList.remove('dark');
+                        document.documentElement.setAttribute('data-theme', 'light');
+                        localStorage.setItem('gm_theme', 'light');
+                        window.dispatchEvent(new Event('gm-theme-change'));
+                        showToast('Light mode activated');
+                      }}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '10px',
+                        border: '2px solid var(--border-color)',
+                        cursor: 'pointer',
+                        background: 'var(--card-bg)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        textAlign: 'left',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>
+                        <Sun size={17} style={{ color: '#F59E0B' }} /> Light Mode
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Daylight clean view</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        document.documentElement.classList.add('dark');
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                        localStorage.setItem('gm_theme', 'dark');
+                        window.dispatchEvent(new Event('gm-theme-change'));
+                        showToast('Dark mode activated');
+                      }}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '10px',
+                        border: '2px solid var(--border-color)',
+                        cursor: 'pointer',
+                        background: 'var(--card-bg)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        textAlign: 'left',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>
+                        <Moon size={17} style={{ color: '#38BDF8' }} /> Dark Mode
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Midnight obsidian theme</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

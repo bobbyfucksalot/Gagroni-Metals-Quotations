@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Search, Plus, Calendar, Bell } from 'lucide-react';
 
+import ThemeToggle from '@/components/ThemeToggle';
+
 interface HeaderProps {
   onSearchClick?: () => void;
 }
@@ -38,22 +40,15 @@ export default function Header({ onSearchClick }: HeaderProps) {
         <strong style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{getBreadcrumbs()}</strong>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {/* Search quick button */}
-        {/* <button
-          onClick={onSearchClick}
-          className="btn-secondary"
-          style={{ height: '36px', padding: '0 12px', fontSize: '12px', color: 'var(--text-secondary)' }}
-        >
-          <Search size={14} />
-          <span>Search (⌘K)</span>
-        </button> */}
-
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {/* Date pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '12px', borderLeft: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', paddingRight: '4px' }}>
           <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
           <span>{currentDate}</span>
         </div>
+
+        {/* Theme Toggle Button */}
+        <ThemeToggle variant="compact" />
 
         {/* Action shortcut */}
         <Link
