@@ -8,7 +8,7 @@ export const initialCompanySettings: CompanySettings = {
   tagline: 'Precision Engineered Metal & Stainless Steel Solutions',
   taxId: '27AAACG9823M1Z8', // Maharashtra GSTIN format
   panNumber: 'AAACG9823M',
-  cinNumber: 'U27200MH2016PTC281902',
+  cinNumber: '',
   msmeNumber: '',
   iecNumber: '',
   email: 'sales@gagronimetals.com',

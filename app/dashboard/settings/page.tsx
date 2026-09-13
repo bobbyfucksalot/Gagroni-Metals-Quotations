@@ -375,6 +375,19 @@ export default function SettingsPage() {
 
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                      Corporate Identification Number (CIN)
+                    </label>
+                    <input
+                      type="text"
+                      className="qc-input"
+                      placeholder="Enter CIN number (optional)"
+                      value={settings.cinNumber || ''}
+                      onChange={(e) => setSettings({ ...settings, cinNumber: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
                       Official Email
                     </label>
                     <input
