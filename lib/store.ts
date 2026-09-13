@@ -486,17 +486,45 @@ class DataStore {
 
   async createQuote(quote: Omit<Quote, 'id' | 'quoteNumber' | 'createdAt' | 'updatedAt'> & { quoteNumber?: string }): Promise<Quote> {
     const conn = await connectDB();
-    const id = `quote-${Date.now()}`;
+    const id = `quote-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const now = new Date().toISOString();
 
-    let count = this.memoryQuotes.length + 1;
-    if (conn) {
-      await this.ensureSeeded();
-      count = (await QuoteModel.countDocuments()) + 1;
-    }
+    let quoteNumber = quote.quoteNumber;
 
-    const pad = String(count).padStart(4, '0');
-    const quoteNumber = quote.quoteNumber || `GM-2026-${pad}`;
+    if (!quoteNumber) {
+      let maxNum = 46;
+
+      if (conn) {
+        await this.ensureSeeded();
+        const existingDocs = await QuoteModel.find({}, { quoteNumber: 1 }).lean();
+        existingDocs.forEach((doc: any) => {
+          const match = doc.quoteNumber?.match(/(\d+)$/);
+          if (match) {
+            const val = parseInt(match[1], 10);
+            if (!isNaN(val) && val > maxNum) maxNum = val;
+          }
+        });
+      }
+
+      this.memoryQuotes.forEach((q) => {
+        const match = q.quoteNumber?.match(/(\d+)$/);
+        if (match) {
+          const val = parseInt(match[1], 10);
+          if (!isNaN(val) && val > maxNum) maxNum = val;
+        }
+      });
+
+      // Verify that candidate number doesn't exist
+      let candidate = maxNum + 1;
+      while (
+        this.memoryQuotes.some((q) => q.quoteNumber === `GM-2026-${String(candidate).padStart(4, '0')}`) ||
+        (conn && (await QuoteModel.exists({ quoteNumber: `GM-2026-${String(candidate).padStart(4, '0')}` })))
+      ) {
+        candidate++;
+      }
+
+      quoteNumber = `GM-2026-${String(candidate).padStart(4, '0')}`;
+    }
 
     const newQuote: Quote = {
       ...quote,
@@ -507,8 +535,20 @@ class DataStore {
     };
 
     if (conn) {
-      await QuoteModel.create(newQuote);
-      console.log(`[MongoDB] Saved new quotation ${quoteNumber} to Quotation.quotations`);
+      try {
+        await QuoteModel.create(newQuote);
+        console.log(`[MongoDB] Saved new quotation ${quoteNumber} to Quotation.quotations`);
+      } catch (err: any) {
+        // If duplicate key error occurs, append timestamp suffix and retry
+        if (err?.code === 11000) {
+          const fallbackNumber = `GM-2026-${Date.now().toString().slice(-4)}`;
+          newQuote.quoteNumber = fallbackNumber;
+          await QuoteModel.create(newQuote);
+          console.log(`[MongoDB] Resolved duplicate key, saved as ${fallbackNumber}`);
+        } else {
+          throw err;
+        }
+      }
     }
     this.memoryQuotes.unshift(newQuote);
     this.quotesCache = null; // Invalidate cache for instant freshness

@@ -78,13 +78,22 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
 
     const newQuote = await store.createQuote({
+      ...body,
       title,
       clientId: clientId || `cli-temp-${Date.now()}`,
       clientName,
+      clientContactPerson: body.clientContactPerson || '',
       clientEmail: clientEmail || '',
       clientPhone: clientPhone || '',
       clientAddress: clientAddress || '',
       clientGst: clientGst || '',
+      clientState: body.clientState || 'Rajasthan',
+      clientStateCode: body.clientStateCode || '08',
+      consigneeName: body.consigneeName || clientName,
+      consigneeAddress: body.consigneeAddress || clientAddress || '',
+      consigneeGst: body.consigneeGst || clientGst || '',
+      consigneeState: body.consigneeState || body.clientState || 'Rajasthan',
+      consigneeStateCode: body.consigneeStateCode || body.clientStateCode || '08',
       status: 'Draft',
       statusHistory: [
         {
@@ -99,18 +108,19 @@ export async function POST(request: Request) {
       taxMode: taxMode || 'gst_intra',
       lineItems,
       corporateFields: corporateFields || {},
-      documentModules: documentModules || { signOff: true, amountInWords: true, hsnCodes: true, productPhotos: false },
+      documentModules: documentModules || { dualSignOff: false, amountInWords: true, hsnCodes: true, thumbnails: true },
       notes: notes || '',
       terms: terms || '',
       totals,
       signature,
       marketingPage: marketingPage || { enabled: false },
       version: 1,
-      theme: theme || 'executive',
+      theme: theme || 'tally',
     });
 
     return NextResponse.json({ success: true, quote: newQuote }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Failed to create quote' }, { status: 500 });
+  } catch (err: any) {
+    console.error('[API Quotes POST Error]:', err);
+    return NextResponse.json({ error: err?.message || 'Failed to create quote' }, { status: 500 });
   }
 }
