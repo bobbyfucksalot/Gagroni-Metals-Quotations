@@ -785,7 +785,7 @@ export default function SettingsPage() {
                         className="qc-input"
                         value={adminName}
                         onChange={(e) => setAdminName(e.target.value)}
-                        placeholder="e.g. Aarav Kapoor"
+                        placeholder="e.g. Faizan Uddin"
                       />
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                         This name appears on the sidebar, header, and authorized quote signatory stamp.

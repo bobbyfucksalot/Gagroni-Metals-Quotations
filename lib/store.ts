@@ -19,7 +19,7 @@ export const initialCompanySettings: CompanySettings = {
   pincode: '410208',
   logoUrl: '/gagroni-metals-logo.png',
   signatureUrl: '',
-  signatoryName: 'Aarav Kapoor',
+  signatoryName: 'Faizan Uddin',
   signatoryTitle: 'Managing Director & Authorized Signatory',
   bankName: 'HDFC Bank Ltd.',
   bankAccountNo: '50200049281729',
@@ -313,7 +313,7 @@ export const initialQuotes: Quote[] = [
       { id: 'li-103', name: 'FASTENER SET', description: '', hsnCode: '7318.15', qty: 150, unit: 'pcs', unitPrice: 100, taxRate: 18, total: 15000 },
     ], 'gst_intra', 0, 0),
     signature: {
-      signatoryName: 'Aarav Kapoor',
+      signatoryName: 'Faizan Uddin',
       signatoryTitle: 'Managing Director',
       signedAt: '2026-09-12T09:00:00Z',
     },
@@ -393,7 +393,7 @@ export const initialQuotes: Quote[] = [
       { id: 'li-202', name: 'Laser-Cut CNC Decorative Screen', description: '', hsnCode: '732690', qty: 94, unit: 'sqft', unitPrice: 320, taxRate: 18, total: 30080 },
     ], 'gst_intra', 0, 0),
     signature: {
-      signatoryName: 'Aarav Kapoor',
+      signatoryName: 'Faizan Uddin',
       signatoryTitle: 'Managing Director',
       signedAt: '2026-09-05T15:30:00Z',
     },

@@ -25,11 +25,27 @@ export default function Sidebar() {
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
-        if (data.user?.name) {
+        if (data.user?.name && data.user.name !== 'Aarav Kapoor') {
           setAdminUser(data.user);
+        } else {
+          fetch('/api/settings')
+            .then((r) => r.json())
+            .then((s) => {
+              const realName = s.settings?.signatoryName || 'Faizan Uddin';
+              setAdminUser({ name: realName, role: 'admin' });
+            })
+            .catch(() => setAdminUser({ name: 'Faizan Uddin', role: 'admin' }));
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        fetch('/api/settings')
+          .then((r) => r.json())
+          .then((s) => {
+            const realName = s.settings?.signatoryName || 'Faizan Uddin';
+            setAdminUser({ name: realName, role: 'admin' });
+          })
+          .catch(() => {});
+      });
   }, [pathname]);
 
   const handleLogout = async () => {
