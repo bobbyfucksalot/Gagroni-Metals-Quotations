@@ -26,6 +26,7 @@ import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import SignaturePad from '@/components/SignaturePad';
 import QuoteDocument from '@/components/QuoteDocument';
+import PartySearchSelect from '@/components/PartySearchSelect';
 import { Client, Product, LineItem, CompanySettings, Quote, QuoteTheme, QuoteMarketingPage, QuoteStatus } from '@/types';
 import { calculateQuoteTotals, formatINR, INDIAN_STATES, getGstStateCode, determineTaxMode } from '@/lib/tax-engine';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
@@ -288,28 +289,45 @@ export default function EditQuotePage() {
     exchangeRates[selectedCurrency]?.inrPerUnit ||
     SUPPORTED_CURRENCIES[selectedCurrency]?.defaultInrPerUnit || 1;
 
+  const handleSelectClient = (c: Client) => {
+    setSelectedClientId(c.id);
+    setClientName(c.name);
+    setClientContactPerson(c.contactPerson || '');
+    setClientEmail(c.email || '');
+    setClientPhone(c.phone || '');
+    setClientAddress(c.billingAddress || '');
+    setClientGst(c.taxId || '');
+    const cState = c.state || 'Rajasthan';
+    const cCode = c.stateCode || getGstStateCode(cState);
+    setClientState(cState);
+    setClientStateCode(cCode);
+    setConsigneeName(c.name);
+    setConsigneeAddress(c.billingAddress || '');
+    setConsigneeGst(c.taxId || '');
+    setConsigneeState(cState);
+    setConsigneeStateCode(cCode);
+
+    const autoTax = determineTaxMode(cState, settings?.state || 'Rajasthan');
+    setTaxMode(autoTax);
+    showToast(`Selected party: ${c.name}`);
+  };
+
+  const handleClearClient = () => {
+    setSelectedClientId('');
+    setClientName('');
+    setClientContactPerson('');
+    setClientEmail('');
+    setClientPhone('');
+    setClientAddress('');
+    setClientGst('');
+    showToast('Party details cleared');
+  };
+
   const handleClientChange = (clientId: string) => {
     setSelectedClientId(clientId);
     const c = clients.find((item) => item.id === clientId);
     if (c) {
-      setClientName(c.name);
-      setClientContactPerson(c.contactPerson);
-      setClientEmail(c.email);
-      setClientPhone(c.phone);
-      setClientAddress(c.billingAddress);
-      setClientGst(c.taxId);
-      const cState = c.state || 'Rajasthan';
-      const cCode = c.stateCode || getGstStateCode(cState);
-      setClientState(cState);
-      setClientStateCode(cCode);
-      setConsigneeName(c.name);
-      setConsigneeAddress(c.billingAddress);
-      setConsigneeGst(c.taxId);
-      setConsigneeState(cState);
-      setConsigneeStateCode(cCode);
-
-      const autoTax = determineTaxMode(cState, settings?.state || 'Rajasthan');
-      setTaxMode(autoTax);
+      handleSelectClient(c);
     }
   };
 
@@ -899,23 +917,13 @@ export default function EditQuotePage() {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
-                          Registered Client
-                        </label>
-                        <select
-                          className="qc-input"
-                          value={selectedClientId}
-                          onChange={(e) => handleClientChange(e.target.value)}
-                        >
-                          <option value="">-- Select or Edit Manually --</option>
-                          {clients.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name} ({c.contactPerson})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <PartySearchSelect
+                        clients={clients}
+                        selectedClientId={selectedClientId}
+                        selectedClientName={clientName}
+                        onSelectClient={handleSelectClient}
+                        onClearClient={handleClearClient}
+                      />
 
                       <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
