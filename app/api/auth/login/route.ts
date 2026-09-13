@@ -14,9 +14,16 @@ export async function POST(request: Request) {
     const trimmedEmail = email.trim().toLowerCase();
     const adminEmail = currentAdmin.email.toLowerCase();
 
+    const allowedEmails = new Set([
+      adminEmail,
+      'admin@gagronimetals.in',
+      'admin@metals.co',
+      (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
+    ].filter(Boolean));
+
     // Check email and password match
     const isValidPassword = await verifyCredentials(password);
-    if (trimmedEmail !== adminEmail || !isValidPassword) {
+    if (!allowedEmails.has(trimmedEmail) || !isValidPassword) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 

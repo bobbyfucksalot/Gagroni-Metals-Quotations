@@ -10,8 +10,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || '/dashboard';
 
-  const [email, setEmail] = useState('admin@metals.co');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -94,7 +94,7 @@ function LoginForm() {
               style={{ paddingLeft: '38px' }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@metals.co"
+              placeholder="admin@gagronimetals.in"
             />
           </div>
         </div>
@@ -104,7 +104,6 @@ function LoginForm() {
             <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
               Password
             </label>
-            <span style={{ fontSize: '11px', color: 'var(--accent-emerald)' }}>Default: admin123</span>
           </div>
           <div style={{ position: 'relative' }}>
             <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />

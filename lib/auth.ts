@@ -22,9 +22,9 @@ declare global {
 }
 
 export const DEFAULT_ADMIN: AdminAccount = globalThis.__adminAccount || {
-  email: process.env.ADMIN_EMAIL || 'admin@metals.co',
+  email: process.env.ADMIN_EMAIL || 'admin@gagronimetals.in',
   passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10),
-  name: 'Aarav Kapoor',
+  name: 'Gagroni Metals Admin',
   role: 'admin',
 };
 
