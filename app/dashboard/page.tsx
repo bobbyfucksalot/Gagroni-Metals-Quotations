@@ -329,7 +329,10 @@ export default function DashboardPage() {
                 {metrics.conversionRate}%
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: 'var(--accent-emerald)', fontWeight: '700' }}>↑ 3.8%</span> high close rate
+                <span style={{ color: 'var(--accent-emerald)', fontWeight: '700' }}>
+                  {quotes.filter((q) => q.status === 'Paid' || q.status === 'Accepted').length} won
+                </span>{' '}
+                of {quotes.length} quotes
               </div>
             </div>
           </div>

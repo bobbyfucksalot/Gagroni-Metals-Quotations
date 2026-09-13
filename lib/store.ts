@@ -405,7 +405,7 @@ export const initialQuotes: Quote[] = [
 ];
 
 class DataStore {
-  private memoryQuotes: Quote[] = [...initialQuotes];
+  private memoryQuotes: Quote[] = [];
   private memoryClients: Client[] = [...initialClients];
   private memoryProducts: Product[] = [...initialProducts];
   private memorySettings: CompanySettings = { ...initialCompanySettings };
@@ -416,11 +416,7 @@ class DataStore {
     if (this.seeded || this.isSeeding) return;
     this.isSeeding = true;
     try {
-      const quoteCount = await QuoteModel.countDocuments();
-      if (quoteCount === 0) {
-        await QuoteModel.insertMany(initialQuotes);
-        console.log('[MongoDB] Seeded initial quotes to Quotation.quotations');
-      }
+      // Do not auto-seed dummy quotes. Quotes must only come from real admin entries.
 
       const clientCount = await ClientModel.countDocuments();
       if (clientCount === 0) {
