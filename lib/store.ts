@@ -406,8 +406,8 @@ export const initialQuotes: Quote[] = [
 
 class DataStore {
   private memoryQuotes: Quote[] = [];
-  private memoryClients: Client[] = [...initialClients];
-  private memoryProducts: Product[] = [...initialProducts];
+  private memoryClients: Client[] = [];
+  private memoryProducts: Product[] = [];
   private memorySettings: CompanySettings = { ...initialCompanySettings };
   private seeded = false;
   private isSeeding = false;
@@ -416,20 +416,7 @@ class DataStore {
     if (this.seeded || this.isSeeding) return;
     this.isSeeding = true;
     try {
-      // Do not auto-seed dummy quotes. Quotes must only come from real admin entries.
-
-      const clientCount = await ClientModel.countDocuments();
-      if (clientCount === 0) {
-        await ClientModel.insertMany(initialClients);
-        console.log('[MongoDB] Seeded initial clients to Quotation.clients');
-      }
-
-      const productCount = await ProductModel.countDocuments();
-      if (productCount === 0) {
-        await ProductModel.insertMany(initialProducts);
-        console.log('[MongoDB] Seeded initial products to Quotation.products');
-      }
-
+      // Do not auto-seed dummy quotes, clients, or products. Everything is user created.
       const settingCount = await SettingModel.countDocuments();
       if (settingCount === 0) {
         await SettingModel.create(initialCompanySettings);
