@@ -521,6 +521,11 @@
     margin-left: 0;
     width: 100%;
   }
+  .qc-content {
+    padding: 18px 16px;
+  }
+}
+
 /* Shimmer Skeleton & Modern Loading Animation */
 @keyframes qc-shimmer {
   0% {
