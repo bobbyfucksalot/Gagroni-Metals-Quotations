@@ -9,14 +9,16 @@ export const initialCompanySettings: CompanySettings = {
   taxId: '27AAACG9823M1Z8', // Maharashtra GSTIN format
   panNumber: 'AAACG9823M',
   cinNumber: 'U27200MH2016PTC281902',
+  msmeNumber: '',
+  iecNumber: '',
   email: 'sales@gagronimetals.com',
   phone: '+91 98200 45890',
   website: 'www.gagronimetals.com',
-  address: 'Plot No. 42-B, MIDC Industrial Area, Taloja',
-  city: 'Navi Mumbai',
-  state: 'Maharashtra',
-  stateCode: '27',
-  pincode: '410208',
+  address: 'Brindawan, Kota - Jhalawar Highway, NH-12',
+  city: 'Jhalawar',
+  state: 'Rajasthan',
+  stateCode: '08',
+  pincode: '326001',
   logoUrl: '/gagroni-metals-logo.png',
   signatureUrl: '',
   signatoryName: 'Faizan Uddin',
@@ -219,7 +221,7 @@ export const initialProducts: Product[] = [
 export const initialQuotes: Quote[] = [
   {
     id: 'quote-001',
-    quoteNumber: 'QT-2026-0046',
+    quoteNumber: 'GM-2026-0046',
     title: 'Industrial Heavy Duty Shelving & Fit-out',
     clientId: 'cli-001',
     clientName: 'APEX INNOVATIONS & INDUSTRIES LTD',
@@ -324,7 +326,7 @@ export const initialQuotes: Quote[] = [
   },
   {
     id: 'quote-002',
-    quoteNumber: 'QT-2026-0047',
+    quoteNumber: 'GM-2026-0047',
     title: 'Storefront Fixtures & Gold PVD Brass Frame Partitions',
     clientId: 'cli-002',
     clientName: 'NORTHSTAR RETAIL OUTFITS',
@@ -404,6 +406,11 @@ export const initialQuotes: Quote[] = [
   },
 ];
 
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
 class DataStore {
   private memoryQuotes: Quote[] = [];
   private memoryClients: Client[] = [];
@@ -412,13 +419,18 @@ class DataStore {
   private seeded = false;
   private isSeeding = false;
 
+  private quotesCache: CacheEntry<Quote[]> | null = null;
+  private clientsCache: CacheEntry<Client[]> | null = null;
+  private productsCache: CacheEntry<Product[]> | null = null;
+  private settingsCache: CacheEntry<CompanySettings> | null = null;
+  private readonly CACHE_TTL = 30000; // 30 seconds high-speed memory cache
+
   private async ensureSeeded() {
     if (this.seeded || this.isSeeding) return;
     this.isSeeding = true;
     try {
-      // Do not auto-seed dummy quotes, clients, or products. Everything is user created.
-      const settingCount = await SettingModel.countDocuments();
-      if (settingCount === 0) {
+      const setting = await SettingModel.findOne().lean();
+      if (!setting) {
         await SettingModel.create(initialCompanySettings);
         console.log('[MongoDB] Seeded company settings to Quotation.settings');
       }
@@ -432,30 +444,44 @@ class DataStore {
 
   // --- QUOTES ---
   async getQuotes(): Promise<Quote[]> {
+    const now = Date.now();
+    if (this.quotesCache && now - this.quotesCache.timestamp < this.CACHE_TTL) {
+      return this.quotesCache.data;
+    }
+
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
       const quotes = await QuoteModel.find().sort({ createdAt: -1 }).lean();
-      return quotes.map((q: any) => {
+      const result = quotes.map((q: any) => {
         const { _id, __v, ...rest } = q;
         return rest as Quote;
       });
+      this.quotesCache = { data: result, timestamp: now };
+      return result;
     }
     return this.memoryQuotes;
   }
 
   async getQuoteById(id: string): Promise<Quote | undefined> {
+    // If quote is already in cached quotes list, return directly in 0ms
+    if (this.quotesCache) {
+      const cached = this.quotesCache.data.find((q) => q.id === id || q.quoteNumber === id);
+      if (cached) return cached;
+    }
+
     const conn = await connectDB();
+    const altId = id.startsWith('QT-') ? id.replace('QT-', 'GM-') : id.startsWith('GM-') ? id.replace('GM-', 'QT-') : id;
     if (conn) {
       await this.ensureSeeded();
-      const quote = await QuoteModel.findOne({ $or: [{ id }, { quoteNumber: id }] }).lean();
+      const quote = await QuoteModel.findOne({ $or: [{ id }, { quoteNumber: id }, { quoteNumber: altId }] }).lean();
       if (quote) {
         const { _id, __v, ...rest } = quote as any;
         return rest as Quote;
       }
       return undefined;
     }
-    return this.memoryQuotes.find((q) => q.id === id || q.quoteNumber === id);
+    return this.memoryQuotes.find((q) => q.id === id || q.quoteNumber === id || q.quoteNumber === altId);
   }
 
   async createQuote(quote: Omit<Quote, 'id' | 'quoteNumber' | 'createdAt' | 'updatedAt'> & { quoteNumber?: string }): Promise<Quote> {
@@ -470,7 +496,7 @@ class DataStore {
     }
 
     const pad = String(count).padStart(4, '0');
-    const quoteNumber = quote.quoteNumber || `QT-2026-${pad}`;
+    const quoteNumber = quote.quoteNumber || `GM-2026-${pad}`;
 
     const newQuote: Quote = {
       ...quote,
@@ -485,6 +511,7 @@ class DataStore {
       console.log(`[MongoDB] Saved new quotation ${quoteNumber} to Quotation.quotations`);
     }
     this.memoryQuotes.unshift(newQuote);
+    this.quotesCache = null; // Invalidate cache for instant freshness
     return newQuote;
   }
 
@@ -505,6 +532,7 @@ class DataStore {
         if (memIdx !== -1) {
           this.memoryQuotes[memIdx] = rest as Quote;
         }
+        this.quotesCache = null; // Invalidate cache
         return rest as Quote;
       }
     }
@@ -520,6 +548,7 @@ class DataStore {
     };
 
     this.memoryQuotes[index] = updated;
+    this.quotesCache = null;
     return updated;
   }
 
@@ -536,24 +565,37 @@ class DataStore {
     if (!conn) {
       success = this.memoryQuotes.length < initialLen;
     }
+    this.quotesCache = null;
     return success;
   }
 
   // --- CLIENTS ---
   async getClients(): Promise<Client[]> {
+    const now = Date.now();
+    if (this.clientsCache && now - this.clientsCache.timestamp < this.CACHE_TTL) {
+      return this.clientsCache.data;
+    }
+
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
       const clients = await ClientModel.find().sort({ createdAt: -1 }).lean();
-      return clients.map((c: any) => {
+      const result = clients.map((c: any) => {
         const { _id, __v, ...rest } = c;
         return rest as Client;
       });
+      this.clientsCache = { data: result, timestamp: now };
+      return result;
     }
     return this.memoryClients;
   }
 
   async getClientById(id: string): Promise<Client | undefined> {
+    if (this.clientsCache) {
+      const found = this.clientsCache.data.find((c) => c.id === id);
+      if (found) return found;
+    }
+
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
@@ -580,6 +622,7 @@ class DataStore {
       await ClientModel.create(newClient);
     }
     this.memoryClients.unshift(newClient);
+    this.clientsCache = null; // Invalidate cache
     return newClient;
   }
 
@@ -598,6 +641,7 @@ class DataStore {
         if (memIdx !== -1) {
           this.memoryClients[memIdx] = rest as Client;
         }
+        this.clientsCache = null; // Invalidate cache
         return rest as Client;
       }
     }
@@ -606,6 +650,7 @@ class DataStore {
     if (index === -1) return null;
 
     this.memoryClients[index] = { ...this.memoryClients[index], ...updates };
+    this.clientsCache = null;
     return this.memoryClients[index];
   }
 
@@ -622,24 +667,37 @@ class DataStore {
     if (!conn) {
       success = this.memoryClients.length < initialLen;
     }
+    this.clientsCache = null;
     return success;
   }
 
   // --- PRODUCTS ---
   async getProducts(): Promise<Product[]> {
+    const now = Date.now();
+    if (this.productsCache && now - this.productsCache.timestamp < this.CACHE_TTL) {
+      return this.productsCache.data;
+    }
+
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
       const products = await ProductModel.find().sort({ createdAt: -1 }).lean();
-      return products.map((p: any) => {
+      const result = products.map((p: any) => {
         const { _id, __v, ...rest } = p;
         return rest as Product;
       });
+      this.productsCache = { data: result, timestamp: now };
+      return result;
     }
     return this.memoryProducts;
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
+    if (this.productsCache) {
+      const found = this.productsCache.data.find((p) => p.id === id);
+      if (found) return found;
+    }
+
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
@@ -666,6 +724,7 @@ class DataStore {
       await ProductModel.create(newProduct);
     }
     this.memoryProducts.unshift(newProduct);
+    this.productsCache = null;
     return newProduct;
   }
 
@@ -682,6 +741,7 @@ class DataStore {
       await ProductModel.insertMany(added);
     }
     this.memoryProducts.unshift(...added);
+    this.productsCache = null;
     return added;
   }
 
@@ -700,6 +760,7 @@ class DataStore {
         if (memIdx !== -1) {
           this.memoryProducts[memIdx] = rest as Product;
         }
+        this.productsCache = null;
         return rest as Product;
       }
     }
@@ -708,6 +769,7 @@ class DataStore {
     if (index === -1) return null;
 
     this.memoryProducts[index] = { ...this.memoryProducts[index], ...updates };
+    this.productsCache = null;
     return this.memoryProducts[index];
   }
 
@@ -724,18 +786,26 @@ class DataStore {
     if (!conn) {
       success = this.memoryProducts.length < initialLen;
     }
+    this.productsCache = null;
     return success;
   }
 
   // --- SETTINGS ---
   async getSettings(): Promise<CompanySettings> {
+    const now = Date.now();
+    if (this.settingsCache && now - this.settingsCache.timestamp < this.CACHE_TTL) {
+      return this.settingsCache.data;
+    }
+
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
       const setting = await SettingModel.findOne().lean();
       if (setting) {
         const { _id, __v, ...rest } = setting as any;
-        return rest as CompanySettings;
+        const result = rest as CompanySettings;
+        this.settingsCache = { data: result, timestamp: now };
+        return result;
       }
     }
     return this.memorySettings;
@@ -753,11 +823,13 @@ class DataStore {
       if (updated) {
         const { _id, __v, ...rest } = updated as any;
         this.memorySettings = { ...this.memorySettings, ...rest };
+        this.settingsCache = null;
         return this.memorySettings;
       }
     }
 
     this.memorySettings = { ...this.memorySettings, ...updates };
+    this.settingsCache = null;
     return this.memorySettings;
   }
 }

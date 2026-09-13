@@ -20,7 +20,7 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import { Client, Quote } from '@/types';
-import { formatINR } from '@/lib/tax-engine';
+import { formatINR, INDIAN_STATES, getGstStateCode } from '@/lib/tax-engine';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -40,6 +40,8 @@ export default function ClientsPage() {
     phone: '',
     billingAddress: '',
     taxId: '',
+    state: 'Rajasthan',
+    stateCode: '08',
     category: 'Commercial' as Client['category'],
     notes: '',
   });
@@ -96,6 +98,8 @@ export default function ClientsPage() {
       phone: '',
       billingAddress: '',
       taxId: '',
+      state: 'Rajasthan',
+      stateCode: '08',
       category: 'Commercial',
       notes: '',
     });
@@ -111,6 +115,8 @@ export default function ClientsPage() {
       phone: client.phone,
       billingAddress: client.billingAddress,
       taxId: client.taxId,
+      state: client.state || 'Rajasthan',
+      stateCode: client.stateCode || getGstStateCode(client.state || 'Rajasthan'),
       category: client.category,
       notes: client.notes || '',
     });
@@ -420,6 +426,26 @@ export default function ClientsPage() {
                         onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
                         placeholder="27AABCA1234A1Z1"
                       />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>
+                        State (GST Jurisdiction)
+                      </label>
+                      <select
+                        className="qc-input"
+                        value={formData.state || 'Rajasthan'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({ ...formData, state: val, stateCode: getGstStateCode(val) });
+                        }}
+                      >
+                        {INDIAN_STATES.map((s) => (
+                          <option key={s.code} value={s.name}>
+                            {s.name} ({s.code})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>

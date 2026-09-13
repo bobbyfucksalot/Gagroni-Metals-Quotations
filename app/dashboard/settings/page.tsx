@@ -19,6 +19,7 @@ import {
   KeyRound,
   QrCode,
   Trash2,
+  PenTool,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -348,6 +349,32 @@ export default function SettingsPage() {
 
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                      MSME / Udyam Registration No.
+                    </label>
+                    <input
+                      type="text"
+                      className="qc-input"
+                      placeholder="e.g. UDYAM-RJ-14-0012345"
+                      value={settings.msmeNumber || ''}
+                      onChange={(e) => setSettings({ ...settings, msmeNumber: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                      Import Export Code (IEC)
+                    </label>
+                    <input
+                      type="text"
+                      className="qc-input"
+                      placeholder="e.g. 0812345678"
+                      value={settings.iecNumber || ''}
+                      onChange={(e) => setSettings({ ...settings, iecNumber: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
                       Official Email
                     </label>
                     <input
@@ -441,6 +468,134 @@ export default function SettingsPage() {
                       onChange={(e) => setSettings({ ...settings, signatoryTitle: e.target.value })}
                     />
                   </div>
+                </div>
+
+                {/* Company Authorized Signature Upload */}
+                <div style={{ marginTop: '20px', padding: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <PenTool size={15} style={{ color: 'var(--accent-emerald)' }} /> Official Company Authorized Signature / Stamp
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Upload your official scanned signature or seal image (PNG/JPG). This will automatically appear on all quotations.
+                      </div>
+                    </div>
+
+                    {settings.signatureUrl && (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <label
+                          style={{
+                            background: '#EFF6FF',
+                            border: '1px solid #BFDBFE',
+                            color: '#1D4ED8',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '11.5px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                          }}
+                        >
+                          <Upload size={12} /> Change Signature
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = (evt) => {
+                                setSettings({ ...settings, signatureUrl: evt.target?.result as string });
+                                showToast('Signature uploaded!');
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setSettings({ ...settings, signatureUrl: '' })}
+                          style={{
+                            background: '#FEE2E2',
+                            border: '1px solid #FCA5A5',
+                            color: '#B91C1C',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '11.5px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Trash2 size={12} /> Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {settings.signatureUrl ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#FFFFFF', padding: '12px 16px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                      <div style={{ background: '#F8FAFC', padding: '8px 16px', borderRadius: '6px', border: '1px dashed #94A3B8' }}>
+                        <img
+                          src={settings.signatureUrl}
+                          alt="Company Signature"
+                          style={{ maxHeight: '50px', maxWidth: '180px', objectFit: 'contain', display: 'block' }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#047857', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <CheckCircle2 size={14} /> Active Signature Attached
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                          Will appear above &ldquo;{settings.signatoryName || 'Authorized Signatory'}&rdquo; on all quotes.
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        background: '#FFFFFF',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        border: '1px dashed #94A3B8',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Upload size={22} style={{ color: 'var(--accent-emerald)', marginBottom: '6px' }} />
+                      <div style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        Click to upload Official Signature / Stamp Image
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Supports PNG (transparent recommended), JPG, WebP
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (evt) => {
+                            setSettings({ ...settings, signatureUrl: evt.target?.result as string });
+                            showToast('Signature uploaded!');
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
             )}

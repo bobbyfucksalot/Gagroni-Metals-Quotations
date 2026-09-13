@@ -25,7 +25,7 @@ import Toast from '@/components/Toast';
 import SignaturePad from '@/components/SignaturePad';
 import QuoteDocument from '@/components/QuoteDocument';
 import { Client, Product, LineItem, CompanySettings, Quote, QuoteTheme, QuoteMarketingPage } from '@/types';
-import { calculateQuoteTotals, formatINR } from '@/lib/tax-engine';
+import { calculateQuoteTotals, formatINR, INDIAN_STATES, getGstStateCode, determineTaxMode } from '@/lib/tax-engine';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
 
 export default function NewQuotePage() {
@@ -49,15 +49,15 @@ export default function NewQuotePage() {
   const [clientPhone, setClientPhone] = useState('');
   const [clientAddress, setClientAddress] = useState('');
   const [clientGst, setClientGst] = useState('');
-  const [clientState, setClientState] = useState('Maharashtra');
-  const [clientStateCode, setClientStateCode] = useState('27');
+  const [clientState, setClientState] = useState('Rajasthan');
+  const [clientStateCode, setClientStateCode] = useState('08');
 
   // Consignee (Ship to)
   const [consigneeName, setConsigneeName] = useState('');
   const [consigneeAddress, setConsigneeAddress] = useState('');
   const [consigneeGst, setConsigneeGst] = useState('');
-  const [consigneeState, setConsigneeState] = useState('Maharashtra');
-  const [consigneeStateCode, setConsigneeStateCode] = useState('27');
+  const [consigneeState, setConsigneeState] = useState('Rajasthan');
+  const [consigneeStateCode, setConsigneeStateCode] = useState('08');
 
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
   const [validUntil, setValidUntil] = useState(
@@ -109,7 +109,7 @@ export default function NewQuotePage() {
   };
 
   const [documentModules, setDocumentModules] = useState({
-    dualSignOff: true,
+    dualSignOff: false,
     amountInWords: true,
     hsnCodes: true,
     thumbnails: true,
@@ -122,21 +122,7 @@ export default function NewQuotePage() {
     description: 'Precision Engineered Metal & Stainless Steel Solutions • Heavy-Duty Fabrication • Custom Laser Cutting',
   });
 
-  const [lineItems, setLineItems] = useState<LineItem[]>([
-    {
-      id: 'item-1',
-      name: 'PROERGO EXECUTIVE SS SHELVING RACK (4-TIER)',
-      description: 'High-precision SS 304 laser cut uprights with heavy-gauge ribbed decks and anti-vibration footings.',
-      hsnCode: '9403.10',
-      qty: 4,
-      unit: 'units',
-      unitPrice: 28500,
-      taxRate: 18,
-      discountPercent: 0,
-      total: 114000,
-      imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80',
-    },
-  ]);
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
 
   const DEFAULT_CLAUSES = [
     'Quotation is valid for 30 calendar days from the date of issue.',
@@ -215,18 +201,105 @@ export default function NewQuotePage() {
           setClientPhone(c.phone);
           setClientAddress(c.billingAddress);
           setClientGst(c.taxId);
-          setClientState(c.state || 'Maharashtra');
-          setClientStateCode(c.stateCode || '27');
+          const cState = c.state || 'Rajasthan';
+          const cCode = c.stateCode || getGstStateCode(cState);
+          setClientState(cState);
+          setClientStateCode(cCode);
           setConsigneeName(c.name);
           setConsigneeAddress(c.billingAddress);
           setConsigneeGst(c.taxId);
-          setConsigneeState(c.state || 'Maharashtra');
-          setConsigneeStateCode(c.stateCode || '27');
+          setConsigneeState(cState);
+          setConsigneeStateCode(cCode);
+          const autoMode = determineTaxMode(cState, resSettings?.settings?.state || 'Rajasthan');
+          setTaxMode(autoMode);
         }
-        if (resProducts.products) setProducts(resProducts.products);
+        const availableProducts: Product[] = resProducts.products || [];
+        if (resProducts.products) setProducts(availableProducts);
+
+        // Check if a specific productId was passed in URL query param
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const targetProductId = urlParams?.get('productId');
+
+        if (targetProductId) {
+          const selectedProduct = availableProducts.find((p) => p.id === targetProductId);
+          if (selectedProduct) {
+            const mrp = selectedProduct.mrp || selectedProduct.offerPrice;
+            const offerPrice = selectedProduct.offerPrice || mrp;
+            const discPercent = mrp > offerPrice ? Number((((mrp - offerPrice) / mrp) * 100).toFixed(2)) : 0;
+            const discAmount = mrp > offerPrice ? mrp - offerPrice : 0;
+
+            setLineItems([
+              {
+                id: `item-${Date.now()}`,
+                productId: selectedProduct.id,
+                name: selectedProduct.name,
+                description: selectedProduct.description || '',
+                hsnCode: selectedProduct.hsnCode || '730890',
+                qty: 1,
+                unit: selectedProduct.unit || 'pcs',
+                mrp: mrp,
+                unitPrice: offerPrice,
+                taxRate: selectedProduct.defaultGstRate || 18,
+                discountPercent: discPercent,
+                discountAmount: discAmount,
+                total: offerPrice,
+                imageUrl: selectedProduct.imageUrl || '',
+              },
+            ]);
+            setTitle(`Quotation for ${selectedProduct.name}`);
+          }
+        } else if (availableProducts.length > 0) {
+          const p = availableProducts[0];
+          const mrp = p.mrp || p.offerPrice;
+          const offerPrice = p.offerPrice || mrp;
+          const discPercent = mrp > offerPrice ? Number((((mrp - offerPrice) / mrp) * 100).toFixed(2)) : 0;
+          const discAmount = mrp > offerPrice ? mrp - offerPrice : 0;
+
+          setLineItems([
+            {
+              id: `item-${Date.now()}`,
+              productId: p.id,
+              name: p.name,
+              description: p.description || '',
+              hsnCode: p.hsnCode || '730890',
+              qty: 1,
+              unit: p.unit || 'pcs',
+              mrp: mrp,
+              unitPrice: offerPrice,
+              taxRate: p.defaultGstRate || 18,
+              discountPercent: discPercent,
+              discountAmount: discAmount,
+              total: offerPrice,
+              imageUrl: p.imageUrl || '',
+            },
+          ]);
+          setTitle(`Quotation for ${p.name}`);
+        } else {
+          setLineItems([
+            {
+              id: `item-${Date.now()}`,
+              name: 'Custom Metal Product / Service',
+              description: '',
+              hsnCode: '730890',
+              qty: 1,
+              unit: 'pcs',
+              mrp: 1000,
+              unitPrice: 1000,
+              taxRate: 18,
+              discountPercent: 0,
+              discountAmount: 0,
+              total: 1000,
+              imageUrl: '',
+            },
+          ]);
+        }
+
         if (resCurrency?.rates) setExchangeRates(resCurrency.rates);
         if (resSettings.settings) {
           setSettings(resSettings.settings);
+          if (resSettings.settings.signatureUrl) {
+            setSignatureData(resSettings.settings.signatureUrl);
+          }
           if (resSettings.settings.defaultNotes) {
             const parsed = resSettings.settings.defaultNotes
               .split('\n')
@@ -280,14 +353,39 @@ export default function NewQuotePage() {
       setClientPhone(c.phone);
       setClientAddress(c.billingAddress);
       setClientGst(c.taxId);
-      setClientState(c.state || 'Maharashtra');
-      setClientStateCode(c.stateCode || '27');
+      const cState = c.state || 'Rajasthan';
+      const cCode = c.stateCode || getGstStateCode(cState);
+      setClientState(cState);
+      setClientStateCode(cCode);
       setConsigneeName(c.name);
       setConsigneeAddress(c.billingAddress);
       setConsigneeGst(c.taxId);
-      setConsigneeState(c.state || 'Maharashtra');
-      setConsigneeStateCode(c.stateCode || '27');
+      setConsigneeState(cState);
+      setConsigneeStateCode(cCode);
+
+      const autoTax = determineTaxMode(cState, settings?.state || 'Rajasthan');
+      setTaxMode(autoTax);
     }
+  };
+
+  const handleClientStateChange = (stateName: string) => {
+    const code = getGstStateCode(stateName);
+    setClientState(stateName);
+    setClientStateCode(code);
+    if (!consigneeName || consigneeState === clientState) {
+      setConsigneeState(stateName);
+      setConsigneeStateCode(code);
+    }
+    const autoTax = determineTaxMode(stateName, settings?.state || 'Rajasthan');
+    setTaxMode(autoTax);
+  };
+
+  const handleConsigneeStateChange = (stateName: string) => {
+    const code = getGstStateCode(stateName);
+    setConsigneeState(stateName);
+    setConsigneeStateCode(code);
+    const autoTax = determineTaxMode(stateName, settings?.state || 'Rajasthan');
+    setTaxMode(autoTax);
   };
 
   const handleAddItem = (product?: Product) => {
@@ -389,7 +487,7 @@ export default function NewQuotePage() {
 
   const previewQuote: Quote = {
     id: 'quote-preview',
-    quoteNumber: 'QT-2026-0046',
+    quoteNumber: 'GM-2026-0046',
     title,
     clientId: selectedClientId,
     clientName,
@@ -720,6 +818,29 @@ export default function NewQuotePage() {
                         </select>
                       </div>
 
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
+                            State (Place of Supply) *
+                          </label>
+                          <select
+                            className="qc-input"
+                            value={clientState}
+                            onChange={(e) => handleClientStateChange(e.target.value)}
+                          >
+                            {INDIAN_STATES.map((s) => (
+                              <option key={s.code} value={s.name}>
+                                {s.name} ({s.code})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>State Code</label>
+                          <input type="text" className="qc-input" value={clientStateCode} readOnly style={{ background: '#F4F4F5' }} />
+                        </div>
+                      </div>
+
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>GSTIN/UIN</label>
@@ -758,15 +879,30 @@ export default function NewQuotePage() {
                         />
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>Consignee GSTIN</label>
                           <input type="text" className="qc-input" value={consigneeGst} onChange={(e) => setConsigneeGst(e.target.value)} />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>State / Code</label>
-                          <input type="text" className="qc-input" value={`${consigneeState} (${consigneeStateCode})`} onChange={(e) => setConsigneeState(e.target.value)} />
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>State Code</label>
+                          <input type="text" className="qc-input" value={consigneeStateCode} readOnly style={{ background: '#F4F4F5' }} />
                         </div>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>Consignee Destination State *</label>
+                        <select
+                          className="qc-input"
+                          value={consigneeState}
+                          onChange={(e) => handleConsigneeStateChange(e.target.value)}
+                        >
+                          {INDIAN_STATES.map((s) => (
+                            <option key={s.code} value={s.name}>
+                              {s.name} ({s.code})
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div>
@@ -1531,12 +1667,35 @@ export default function NewQuotePage() {
                   <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>
                     Authorized Digital Signature
                   </div>
-                  <SignaturePad onSave={(dataUrl) => setSignatureData(dataUrl)} initialValue={signatureData} />
+                  <SignaturePad
+                    onSave={(dataUrl) => setSignatureData(dataUrl)}
+                    initialValue={signatureData}
+                    defaultSignatureUrl={settings?.signatureUrl}
+                  />
                 </div>
 
                 <div className="qc-card" style={{ padding: '24px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>
-                    Totals Breakdown (GST Engine)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                      Totals Breakdown (GST Engine)
+                    </div>
+                    {/* Tax Mode Badge */}
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        padding: '3px 9px',
+                        borderRadius: '6px',
+                        background: taxMode === 'gst_intra' ? '#ECFDF5' : '#EFF6FF',
+                        color: taxMode === 'gst_intra' ? '#047857' : '#1E3A8A',
+                        border: taxMode === 'gst_intra' ? '1px solid #A7F3D0' : '1px solid #BFDBFE',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                      }}
+                    >
+                      {taxMode === 'gst_intra' ? '✓ Same State (CGST 9% + SGST 9%)' : '✓ Inter-State (IGST 18%)'}
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
@@ -1554,17 +1713,65 @@ export default function NewQuotePage() {
                       <span>Taxable Amount:</span>
                       <span>{formatINR(totals.taxableAmount)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>CGST (9%):</span>
-                      <span>{formatINR(totals.cgst)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>SGST (9%):</span>
-                      <span>{formatINR(totals.sgst)}</span>
-                    </div>
+
+                    {taxMode === 'gst_intra' ? (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857' }}>
+                          <span>Central Tax (CGST 9%):</span>
+                          <span>{formatINR(totals.cgst)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857' }}>
+                          <span>State Tax (SGST 9%):</span>
+                          <span>{formatINR(totals.sgst)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1E3A8A' }}>
+                        <span>Integrated Tax (IGST 18%):</span>
+                        <span>{formatINR(totals.igst)}</span>
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #000', borderBottom: '2px solid #000', fontSize: '16px', fontWeight: '800' }}>
                       <span>Grand Total:</span>
                       <span>{formatINR(totals.grandTotal)}</span>
+                    </div>
+
+                    {/* Manual Override Controls */}
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '6px', fontSize: '11px', flexWrap: 'wrap' }}>
+                      <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Override Tax:</span>
+                      <button
+                        type="button"
+                        onClick={() => setTaxMode('gst_intra')}
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          border: '1px solid var(--border-color)',
+                          background: taxMode === 'gst_intra' ? 'var(--accent-emerald)' : '#FFFFFF',
+                          color: taxMode === 'gst_intra' ? '#FFFFFF' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '10.5px',
+                        }}
+                      >
+                        Intra (CGST+SGST)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTaxMode('gst_inter')}
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          border: '1px solid var(--border-color)',
+                          background: taxMode === 'gst_inter' ? '#1E3A8A' : '#FFFFFF',
+                          color: taxMode === 'gst_inter' ? '#FFFFFF' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '10.5px',
+                        }}
+                      >
+                        Inter (IGST 18%)
+                      </button>
                     </div>
 
                     <button

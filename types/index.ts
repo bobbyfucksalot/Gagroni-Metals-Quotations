@@ -181,6 +181,8 @@ export interface CompanySettings {
   taxId: string; // GSTIN
   panNumber: string;
   cinNumber?: string;
+  msmeNumber?: string;
+  iecNumber?: string;
   email: string;
   phone: string;
   website: string;

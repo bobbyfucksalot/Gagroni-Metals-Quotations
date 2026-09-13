@@ -17,6 +17,8 @@ import {
   X,
   Package,
   Image as ImageIcon,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -31,6 +33,11 @@ export default function CatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+  const [expandedDesc, setExpandedDesc] = useState<Record<string, boolean>>({});
+
+  const toggleDesc = (id: string) => {
+    setExpandedDesc((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -38,7 +45,7 @@ export default function CatalogPage() {
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
-    category: 'Stainless Steel' as Product['category'],
+    category: '' as Product['category'],
     description: '',
     mrp: 1000,
     offerPrice: 900,
@@ -72,15 +79,7 @@ export default function CatalogPage() {
   }, []);
 
   const categories = useMemo(() => {
-    const defaultCats = [
-      'Stainless Steel',
-      'Mild Steel',
-      'Brass & Copper',
-      'Aluminum',
-      'Custom Fabrication',
-      'Fasteners & Hardware',
-    ];
-    const set = new Set<string>(defaultCats);
+    const set = new Set<string>();
     products.forEach((p) => {
       if (p.category && p.category.trim()) set.add(p.category.trim());
     });
@@ -105,7 +104,7 @@ export default function CatalogPage() {
     setFormData({
       name: '',
       sku: `GM-MET-${Date.now().toString().slice(-4)}`,
-      category: 'Stainless Steel',
+      category: '',
       description: '',
       mrp: 5000,
       offerPrice: 4500,
@@ -298,115 +297,155 @@ export default function CatalogPage() {
           </div>
 
           {/* Catalog Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '16px' }}>
             {filteredProducts.map((product) => {
               const discountPercent =
                 product.mrp > product.offerPrice
                   ? Math.round(((product.mrp - product.offerPrice) / product.mrp) * 100)
                   : 0;
+              const isDescExpanded = !!expandedDesc[product.id];
+              const isLongDesc = (product.description || '').length > 80;
 
               return (
-                <div key={product.id} className="qc-card qc-card-hover" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div key={product.id} className="qc-card qc-card-hover" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: '10px' }}>
                   {/* Product Visual Header */}
                   {product.imageUrl ? (
-                    <div style={{ position: 'relative', width: '100%', height: '170px', background: '#F4F4F5', overflow: 'hidden', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ position: 'relative', width: '100%', height: '145px', background: '#F4F4F5', overflow: 'hidden', borderBottom: '1px solid var(--border-subtle)' }}>
                       <img
                         src={product.imageUrl}
                         alt={product.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                       />
-                      <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
-                        <span style={{ fontSize: '10px', fontWeight: '700', color: '#065F46', background: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'blur(4px)', padding: '3px 8px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <div style={{ position: 'absolute', top: '8px', left: '8px' }}>
+                        <span style={{ fontSize: '9.5px', fontWeight: '700', color: '#065F46', background: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'blur(4px)', padding: '2px 7px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                           {product.category}
                         </span>
                       </div>
-                      <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#FFFFFF', background: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', padding: '2px 7px', borderRadius: '4px' }}>
+                      <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '9.5px', color: '#FFFFFF', background: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', padding: '2px 6px', borderRadius: '4px' }}>
                           {product.sku}
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <div style={{ padding: '20px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-emerald)', background: 'var(--accent-emerald-light)', padding: '2px 8px', borderRadius: '4px' }}>
+                    <div style={{ padding: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '9.5px', fontWeight: '700', color: 'var(--accent-emerald)', background: 'var(--accent-emerald-light)', padding: '2px 7px', borderRadius: '4px' }}>
                         {product.category}
                       </span>
-                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '10.5px', color: 'var(--text-muted)' }}>
                         SKU: {product.sku}
                       </span>
                     </div>
                   )}
 
-                  <div style={{ padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                  <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    <h2 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 6px', lineHeight: '1.3' }}>
                       {product.name}
                     </h2>
 
-                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0 0 16px', flex: 1 }}>
-                      {product.description}
-                    </p>
-
-                  {/* Pricing Box */}
-                  <div style={{ background: '#FAFAF9', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <div>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Quoted Rate</div>
-                        <div className="tabular-nums font-serif-heading" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>
-                          {formatINR(product.offerPrice)} <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)' }}>/ {product.unit}</span>
-                        </div>
-                      </div>
-
-                      {discountPercent > 0 && (
-                        <div style={{ textAlign: 'right' }}>
-                          <span style={{ fontSize: '11px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>
-                            {formatINR(product.mrp)}
-                          </span>
-                          <div style={{ fontSize: '11px', fontWeight: '700', color: '#B45309' }}>
-                            {discountPercent}% OFF
-                          </div>
-                        </div>
+                    {/* Compact Description with Read more toggle */}
+                    <div style={{ margin: '0 0 12px', flex: 1 }}>
+                      <p
+                        style={{
+                          fontSize: '11.5px',
+                          color: 'var(--text-secondary)',
+                          lineHeight: '1.45',
+                          margin: 0,
+                          display: '-webkit-box',
+                          WebkitLineClamp: isDescExpanded ? 'unset' : 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: isDescExpanded ? 'visible' : 'hidden',
+                        }}
+                      >
+                        {product.description}
+                      </p>
+                      {isLongDesc && (
+                        <button
+                          type="button"
+                          onClick={() => toggleDesc(product.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '3px 0 0 0',
+                            color: 'var(--accent-emerald)',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                          }}
+                        >
+                          {isDescExpanded ? (
+                            <>Show less <ChevronUp size={12} /></>
+                          ) : (
+                            <>Read more <ChevronDown size={12} /></>
+                          )}
+                        </button>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border-color)' }}>
-                      <span>HSN Code: <strong>{product.hsnCode}</strong></span>
-                      <span>GST: <strong>{product.defaultGstRate}%</strong></span>
-                      <span>Stock: <strong>{product.stockQty} {product.unit}</strong></span>
+                    {/* Pricing Box */}
+                    <div style={{ background: '#FAFAF9', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <div>
+                          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Quoted Rate</div>
+                          <div className="tabular-nums font-serif-heading" style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>
+                            {formatINR(product.offerPrice)} <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-secondary)' }}>/ {product.unit}</span>
+                          </div>
+                        </div>
+
+                        {discountPercent > 0 && (
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '10.5px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>
+                              {formatINR(product.mrp)}
+                            </span>
+                            <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#B45309' }}>
+                              {discountPercent}% OFF
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--text-secondary)', marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed var(--border-color)' }}>
+                        <span>HSN: <strong>{product.hsnCode}</strong></span>
+                        <span>GST: <strong>{product.defaultGstRate}%</strong></span>
+                        <span>Stock: <strong>{product.stockQty} {product.unit}</strong></span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
-                    <Link
-                      href="/dashboard/quotes/new"
-                      style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-emerald)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      Quote with this item <ArrowRight size={13} />
-                    </Link>
+                    {/* Actions */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>
+                      <Link
+                        href={`/dashboard/quotes/new?productId=${encodeURIComponent(product.id)}`}
+                        style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--accent-emerald)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        Quote item <ArrowRight size={12} />
+                      </Link>
 
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        onClick={() => handleOpenEditModal(product)}
-                        className="btn-secondary"
-                        style={{ height: '30px', padding: '0 8px', fontSize: '11px' }}
-                        title="Edit Product"
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="btn-danger"
-                        style={{ height: '30px', padding: '0 8px', fontSize: '11px' }}
-                        title="Delete Product"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <button
+                          onClick={() => handleOpenEditModal(product)}
+                          className="btn-secondary"
+                          style={{ height: '28px', padding: '0 8px', fontSize: '11px' }}
+                          title="Edit Product"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="btn-danger"
+                          style={{ height: '28px', padding: '0 8px', fontSize: '11px' }}
+                          title="Delete Product"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
 
           {/* Add / Edit Product Modal */}
@@ -463,7 +502,7 @@ export default function CatalogPage() {
                         className="qc-input"
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        placeholder="e.g. Stainless Steel, Mild Steel, Pipes..."
+                        placeholder="e.g. Machine, Equipment, Tools..."
                       />
                     </div>
 

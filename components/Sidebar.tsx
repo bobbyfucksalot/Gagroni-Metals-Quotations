@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
+  Download,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -20,33 +21,62 @@ export default function Sidebar() {
   const router = useRouter();
 
   const [adminUser, setAdminUser] = React.useState({ name: 'Admin', role: 'admin' });
+  const [installPrompt, setInstallPrompt] = React.useState<any>(null);
+  const [isStandalone, setIsStandalone] = React.useState(false);
 
   React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const standalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
+
+      const handleBeforeInstall = (e: any) => {
+        e.preventDefault();
+        setInstallPrompt(e);
+      };
+      window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+      return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    }
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsStandalone(true);
+      setInstallPrompt(null);
+    }
+  };
+
+  React.useEffect(() => {
+    // Check sessionStorage cache first for instantaneous render
+    const cachedName = typeof window !== 'undefined' ? sessionStorage.getItem('gm_admin_name') : null;
+    if (cachedName) {
+      setAdminUser({ name: cachedName, role: 'admin' });
+      return;
+    }
+
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
         if (data.user?.name && data.user.name !== 'Aarav Kapoor') {
           setAdminUser(data.user);
+          sessionStorage.setItem('gm_admin_name', data.user.name);
         } else {
           fetch('/api/settings')
             .then((r) => r.json())
             .then((s) => {
               const realName = s.settings?.signatoryName || 'Faizan Uddin';
               setAdminUser({ name: realName, role: 'admin' });
+              sessionStorage.setItem('gm_admin_name', realName);
             })
             .catch(() => setAdminUser({ name: 'Faizan Uddin', role: 'admin' }));
         }
       })
-      .catch(() => {
-        fetch('/api/settings')
-          .then((r) => r.json())
-          .then((s) => {
-            const realName = s.settings?.signatoryName || 'Faizan Uddin';
-            setAdminUser({ name: realName, role: 'admin' });
-          })
-          .catch(() => {});
-      });
-  }, [pathname]);
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -141,6 +171,33 @@ export default function Sidebar() {
 
       {/* Bottom Section: User Profile */}
       <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+        {/* Install Desktop App Button */}
+        {installPrompt && !isStandalone && (
+          <button
+            type="button"
+            onClick={handleInstallApp}
+            style={{
+              width: '100%',
+              marginBottom: '10px',
+              padding: '8px 12px',
+              background: '#047857',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '11.5px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 6px rgba(4, 120, 87, 0.25)',
+            }}
+          >
+            <Download size={14} /> Install Desktop App
+          </button>
+        )}
+
         {/* User Card */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
           <Link

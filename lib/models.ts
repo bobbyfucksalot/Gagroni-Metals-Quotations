@@ -46,6 +46,10 @@ const QuoteSchema = new Schema(
   }
 );
 
+QuoteSchema.index({ createdAt: -1 });
+QuoteSchema.index({ clientId: 1 });
+QuoteSchema.index({ status: 1 });
+
 export const QuoteModel = mongoose.models.Quote || mongoose.model('Quote', QuoteSchema, 'quotations');
 
 // 2. Client Schema & Model
@@ -69,6 +73,9 @@ const ClientSchema = new Schema(
     strict: false,
   }
 );
+
+ClientSchema.index({ createdAt: -1 });
+ClientSchema.index({ name: 1 });
 
 export const ClientModel = mongoose.models.Client || mongoose.model('Client', ClientSchema, 'clients');
 
@@ -95,6 +102,9 @@ const ProductSchema = new Schema(
   }
 );
 
+ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ category: 1 });
+
 export const ProductModel = mongoose.models.Product || mongoose.model('Product', ProductSchema, 'products');
 
 // 4. Company Settings Schema & Model
@@ -105,6 +115,8 @@ const SettingSchema = new Schema(
     taxId: { type: String, default: '' },
     panNumber: { type: String, default: '' },
     cinNumber: { type: String, default: '' },
+    msmeNumber: { type: String, default: '' },
+    iecNumber: { type: String, default: '' },
     email: { type: String, default: '' },
     phone: { type: String, default: '' },
     website: { type: String, default: '' },

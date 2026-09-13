@@ -49,7 +49,7 @@ export default function SingleQuotePage() {
   const [fetchingRates, setFetchingRates] = useState(false);
 
   const [modules, setModules] = useState({
-    dualSignOff: true,
+    dualSignOff: false,
     amountInWords: true,
     hsnCodes: true,
     thumbnails: true,
@@ -75,7 +75,7 @@ export default function SingleQuotePage() {
         if (resQuote.quote.theme) setSelectedTheme(resQuote.quote.theme);
         if (resQuote.quote.documentModules) {
           setModules({
-            dualSignOff: resQuote.quote.documentModules.dualSignOff ?? true,
+            dualSignOff: resQuote.quote.documentModules.dualSignOff ?? false,
             amountInWords: resQuote.quote.documentModules.amountInWords ?? true,
             hsnCodes: resQuote.quote.documentModules.hsnCodes ?? true,
             thumbnails: resQuote.quote.documentModules.thumbnails ?? true,

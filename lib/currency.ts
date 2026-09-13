@@ -45,8 +45,14 @@ export async function getLiveExchangeRates(): Promise<{ [key: string]: { rateAga
   }
 
   try {
-    // Free open exchange rate endpoint (no auth key required)
-    const res = await fetch('https://open.er-api.com/v6/latest/INR', { next: { revalidate: 14400 } });
+    // Free open exchange rate endpoint with strict 1.5s timeout to prevent page blocking
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const res = await fetch('https://open.er-api.com/v6/latest/INR', {
+      signal: controller.signal,
+      next: { revalidate: 14400 },
+    });
+    clearTimeout(timeoutId);
     if (res.ok) {
       const data = await res.json();
       if (data && data.rates) {

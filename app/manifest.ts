@@ -1,0 +1,36 @@
+import type { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Gagroni Metals — Quotation & ERP',
+    short_name: 'Gagroni Metals',
+    description: 'Precision Engineered Metal & Stainless Steel Solutions - Enterprise Quotation Workspace',
+    start_url: '/dashboard',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'any',
+    background_color: '#09090B',
+    theme_color: '#18181B',
+    categories: ['business', 'productivity', 'utilities'],
+    icons: [
+      {
+        src: '/icons/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/icons/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/gagroni-metals-logo.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+    ],
+  };
+}

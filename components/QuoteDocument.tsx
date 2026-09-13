@@ -325,9 +325,11 @@ export default function QuoteDocument({
               <div style={{ fontSize: '10px', marginTop: '2px' }}>
                 <strong>GSTIN/UIN:</strong> {settings.taxId} &nbsp;|&nbsp; <strong>PAN:</strong> {settings.panNumber}
               </div>
-              {settings.cinNumber && (
-                <div style={{ fontSize: '10px' }}>
-                  <strong>CIN:</strong> {settings.cinNumber}
+              {(settings.msmeNumber || settings.iecNumber || settings.cinNumber) && (
+                <div style={{ fontSize: '10px', color: '#222222', marginTop: '1px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {settings.msmeNumber && <span><strong>MSME Reg:</strong> {settings.msmeNumber}</span>}
+                  {settings.iecNumber && <span><strong>IEC Code:</strong> {settings.iecNumber}</span>}
+                  {settings.cinNumber && <span><strong>CIN:</strong> {settings.cinNumber}</span>}
                 </div>
               )}
               <div style={{ fontSize: '10px', color: '#333333', marginTop: '2px' }}>
@@ -463,7 +465,7 @@ export default function QuoteDocument({
             </div>
             {quote.clientPhone && (
               <div>
-                <strong>Attn:</strong> {quote.clientContactPerson || 'Procurement Officer'} · <strong>Phone:</strong> {quote.clientPhone}
+                <strong>Phone:</strong> {quote.clientPhone}
               </div>
             )}
           </div>
@@ -528,22 +530,8 @@ export default function QuoteDocument({
                 <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'top', fontWeight: '700', borderRight: '1px solid #000000' }}>
                   {item.qty.toFixed(2)} {item.unit}
                 </td>
-                <td style={{ padding: '8px 8px', textAlign: 'right', verticalAlign: 'top', borderRight: '1px solid #000000', fontVariantNumeric: 'tabular-nums' }}>
-                  {item.mrp && item.mrp > item.unitPrice ? (
-                    <div>
-                      <div style={{ fontSize: '8.5px', color: '#6B7280', textDecoration: 'line-through' }}>
-                        MRP {formatMoney(item.mrp)}
-                      </div>
-                      <div style={{ fontWeight: '700' }}>
-                        {formatMoney(item.unitPrice)}
-                      </div>
-                      <div style={{ fontSize: '8px', color: '#047857', fontWeight: '700' }}>
-                        Disc: -{formatMoney(item.mrp - item.unitPrice)}
-                      </div>
-                    </div>
-                  ) : (
-                    formatMoney(item.unitPrice)
-                  )}
+                <td style={{ padding: '8px 8px', textAlign: 'right', verticalAlign: 'top', borderRight: '1px solid #000000', fontVariantNumeric: 'tabular-nums', fontWeight: '700' }}>
+                  {formatMoney(item.unitPrice)}
                 </td>
                 <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'top', borderRight: '1px solid #000000', color: '#555555' }}>
                   {item.unit}
@@ -572,47 +560,47 @@ export default function QuoteDocument({
 
         {/* Amount in Words & Bank Details */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', borderBottom: '1px solid #000000', fontSize: '10px' }}>
-          <div style={{ padding: '8px 10px', borderRight: '1px solid #000000' }}>
-            {modules.amountInWords && (
-              <div style={{ marginBottom: '8px' }}>
-                <div style={{ fontSize: '9px', textTransform: 'uppercase', color: '#555555' }}>Amount Chargeable (in words):</div>
-                <div style={{ fontWeight: '800', fontStyle: 'italic', fontSize: '10.5px' }}>
-                  {displayAmountInWords}
-                </div>
-              </div>
-            )}
-
-            {/* Company Bank Details & Payment QR */}
-            {(showBank || showQr) && (
-              <div style={{ borderTop: '1px dashed #CCCCCC', paddingTop: '6px', fontSize: '9.5px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                  <div>
-                    <div style={{ fontWeight: '700', textTransform: 'uppercase' }}>
-                      {showBank ? "Company's Bank Details" : 'Direct UPI Payment'}
-                    </div>
-                    {showBank && (
-                      <>
-                        <div><strong>Bank Name:</strong> {settings.bankName}</div>
-                        <div><strong>A/c No.:</strong> {settings.bankAccountNo}</div>
-                        <div><strong>Branch &amp; IFS Code:</strong> {settings.bankBranch} &amp; {settings.bankIfsc}</div>
-                      </>
-                    )}
-                    {settings.upiId && <div><strong>UPI ID:</strong> {settings.upiId}</div>}
-                    {!showBank && <div style={{ fontSize: '8.5px', color: '#555555', marginTop: '2px' }}>Scan using GPay, PhonePe, Paytm, or BHIM</div>}
+          <div style={{ padding: '8px 10px', borderRight: '1px solid #000000', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {modules.amountInWords && (
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ fontSize: '9px', textTransform: 'uppercase', color: '#555555' }}>Amount Chargeable (in words):</div>
+                  <div style={{ fontWeight: '800', fontStyle: 'italic', fontSize: '10.5px' }}>
+                    {displayAmountInWords}
                   </div>
+                </div>
+              )}
 
-                  {showQr && (
-                    <div style={{ textAlign: 'center', flexShrink: 0, padding: '3px', background: '#FFFFFF', border: '1px solid #000000', borderRadius: '4px' }}>
-                      <img
-                        src={settings.paymentQrUrl}
-                        alt="UPI Payment QR Code"
-                        style={{ width: '64px', height: '64px', objectFit: 'contain', display: 'block' }}
-                      />
-                      <div style={{ fontSize: '7.5px', fontWeight: '800', marginTop: '2px', color: '#000000', letterSpacing: '0.02em' }}>
-                        SCAN TO PAY
-                      </div>
-                    </div>
-                  )}
+              {/* Company Bank Details */}
+              {showBank && (
+                <div style={{ borderTop: modules.amountInWords ? '1px dashed #CCCCCC' : 'none', paddingTop: '6px', fontSize: '9.5px' }}>
+                  <div style={{ fontWeight: '700', textTransform: 'uppercase' }}>
+                    Company&apos;s Bank Details
+                  </div>
+                  <div><strong>Bank Name:</strong> {settings.bankName}</div>
+                  <div><strong>A/c No.:</strong> {settings.bankAccountNo}</div>
+                  <div><strong>Branch &amp; IFS Code:</strong> {settings.bankBranch} &amp; {settings.bankIfsc}</div>
+                  {settings.upiId && <div><strong>UPI ID:</strong> {settings.upiId}</div>}
+                </div>
+              )}
+              {!showBank && showQr && (
+                <div style={{ fontSize: '9px', color: '#555555', marginTop: '4px' }}>
+                  Scan QR code via PhonePe, GPay, Paytm or BHIM UPI
+                  {settings.upiId && <div style={{ fontWeight: '700', color: '#000000', marginTop: '2px' }}>UPI ID: {settings.upiId}</div>}
+                </div>
+              )}
+            </div>
+
+            {/* QR Code aligned to top */}
+            {showQr && (
+              <div style={{ textAlign: 'center', flexShrink: 0, padding: '4px', background: '#FFFFFF', border: '1.5px solid #000000', borderRadius: '4px' }}>
+                <img
+                  src={settings.paymentQrUrl}
+                  alt="UPI Payment QR Code"
+                  style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', imageRendering: 'pixelated' }}
+                />
+                <div style={{ fontSize: '8px', fontWeight: '800', marginTop: '3px', color: '#000000', letterSpacing: '0.04em' }}>
+                  SCAN TO PAY
                 </div>
               </div>
             )}
@@ -692,26 +680,22 @@ export default function QuoteDocument({
           <strong>Declaration:</strong> We declare that this quotation shows the actual price of the goods described and that all particulars are true and correct.
         </div>
 
-        {/* Dual Sign-Off Block */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '85px', fontSize: '10px' }}>
-          {/* Customer's Seal & Signature */}
-          <div style={{ padding: '8px 10px', borderRight: '1px solid #000000', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div style={{ color: '#555555' }}>Customer&apos;s Seal and Signature</div>
-            <div style={{ borderTop: '1px dashed #AAAAAA', paddingTop: '4px', color: '#777777', fontSize: '9px', textAlign: 'center' }}>
-              [Authorized Customer Acceptance Stamp]
-            </div>
-          </div>
-
+        {/* Company Signatory Block */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', minHeight: '85px', fontSize: '10px' }}>
           {/* Company Authorized Signatory */}
-          <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', textAlign: 'right' }}>
+          <div style={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', textAlign: 'right', minWidth: '240px' }}>
             <div style={{ fontWeight: '700' }}>for {settings.companyName}</div>
 
-            {quote.signature?.imageUrl ? (
-              <div style={{ height: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                <Image src={quote.signature.imageUrl} alt="Digital Signature" width={120} height={36} style={{ objectFit: 'contain' }} />
+            {(quote.signature?.imageUrl || settings.signatureUrl) ? (
+              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+                <img
+                  src={quote.signature?.imageUrl || settings.signatureUrl}
+                  alt="Digital Signature"
+                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+                />
               </div>
             ) : (
-              <div style={{ height: '30px' }}></div>
+              <div style={{ height: '35px' }}></div>
             )}
 
             <div>
@@ -763,8 +747,15 @@ export default function QuoteDocument({
               </h1>
               <div style={{ fontSize: '11px', color: '#52525B', marginTop: '2px' }}>{settings.tagline}</div>
               <div style={{ fontSize: '10px', color: '#71717A', marginTop: '2px' }}>
-                GSTIN: <strong>{settings.taxId}</strong> | State: <strong>{settings.state} (27)</strong>
+                GSTIN: <strong>{settings.taxId}</strong> | State: <strong>{settings.state} ({settings.stateCode || '27'})</strong>
               </div>
+              {(settings.panNumber || settings.msmeNumber || settings.iecNumber) && (
+                <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '1px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {settings.panNumber && <span>PAN: <strong style={{ color: '#18181B' }}>{settings.panNumber}</strong></span>}
+                  {settings.msmeNumber && <span>MSME: <strong style={{ color: '#18181B' }}>{settings.msmeNumber}</strong></span>}
+                  {settings.iecNumber && <span>IEC: <strong style={{ color: '#18181B' }}>{settings.iecNumber}</strong></span>}
+                </div>
+              )}
             </div>
           </div>
 
@@ -845,22 +836,8 @@ export default function QuoteDocument({
                 </td>
                 {modules.hsnCodes && <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', color: '#64748B', fontFamily: 'monospace' }}>{item.hsnCode}</td>}
                 <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', fontWeight: '600' }}>{item.qty} {item.unit}</td>
-                <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontVariantNumeric: 'tabular-nums' }}>
-                  {item.mrp && item.mrp > item.unitPrice ? (
-                    <div>
-                      <div style={{ fontSize: '9px', color: '#94A3B8', textDecoration: 'line-through' }}>
-                        MRP {formatMoney(item.mrp)}
-                      </div>
-                      <div style={{ fontWeight: '700', color: '#0F172A' }}>
-                        {formatMoney(item.unitPrice)}
-                      </div>
-                      <div style={{ fontSize: '8px', color: '#047857', fontWeight: '700' }}>
-                        Disc: -{formatMoney(item.mrp - item.unitPrice)}
-                      </div>
-                    </div>
-                  ) : (
-                    formatMoney(item.unitPrice)
-                  )}
+                <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontVariantNumeric: 'tabular-nums', fontWeight: '700', color: '#0F172A' }}>
+                  {formatMoney(item.unitPrice)}
                 </td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', color: '#64748B' }}>{item.taxRate}%</td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '700', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.qty * item.unitPrice)}</td>
@@ -896,13 +873,13 @@ export default function QuoteDocument({
                   </div>
 
                   {showQr && (
-                    <div style={{ textAlign: 'center', flexShrink: 0, padding: '3px', background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '4px' }}>
+                    <div style={{ textAlign: 'center', flexShrink: 0, padding: '4px', background: '#FFFFFF', border: '1.5px solid #1E3A8A', borderRadius: '6px' }}>
                       <img
                         src={settings.paymentQrUrl}
                         alt="Payment QR"
-                        style={{ width: '60px', height: '60px', objectFit: 'contain', display: 'block' }}
+                        style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', imageRendering: 'pixelated' }}
                       />
-                      <div style={{ fontSize: '7.5px', fontWeight: '800', color: '#1E3A8A', marginTop: '2px' }}>SCAN TO PAY</div>
+                      <div style={{ fontSize: '8px', fontWeight: '800', color: '#1E3A8A', marginTop: '3px', letterSpacing: '0.04em' }}>SCAN TO PAY</div>
                     </div>
                   )}
                 </div>
@@ -925,10 +902,23 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-              <span>GST Tax (CGST + SGST):</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.totalTax)}</span>
-            </div>
+            {quote.taxMode === 'gst_intra' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                  <span>Central Tax (CGST 9%):</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.cgst)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                  <span>State Tax (SGST 9%):</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.sgst)}</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                <span>Integrated Tax (IGST 18%):</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.totalTax)}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #1E3A8A', borderBottom: '2px solid #1E3A8A', fontSize: '15px', fontWeight: '800', color: '#1E3A8A', marginTop: '6px' }}>
               <span>Total Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.grandTotal)}</span>
@@ -957,27 +947,25 @@ export default function QuoteDocument({
           </div>
         )}
 
-        {/* Dual Sign-off */}
-        {modules.dualSignOff && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
-            <div>
-              <div style={{ fontSize: '10px', color: '#64748B', marginBottom: '35px' }}>Client Acceptance Signature</div>
-              <div style={{ fontSize: '11px', fontWeight: '700' }}>For {quote.clientName}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '10px', color: '#64748B' }}>Authorized Signatory</div>
-              {quote.signature?.imageUrl ? (
-                <div style={{ height: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <Image src={quote.signature.imageUrl} alt="Signature" width={110} height={35} style={{ objectFit: 'contain' }} />
-                </div>
-              ) : (
-                <div style={{ height: '35px' }}></div>
-              )}
-              <div style={{ fontSize: '11px', fontWeight: '700' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
-              <div style={{ fontSize: '10px', color: '#64748B' }}>{settings.companyName}</div>
-            </div>
+        {/* Company Signatory Block */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '10px', color: '#64748B' }}>Authorized Signatory</div>
+            {(quote.signature?.imageUrl || settings.signatureUrl) ? (
+              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+                <img
+                  src={quote.signature?.imageUrl || settings.signatureUrl}
+                  alt="Signature"
+                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+                />
+              </div>
+            ) : (
+              <div style={{ height: '35px' }}></div>
+            )}
+            <div style={{ fontSize: '11px', fontWeight: '700' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
+            <div style={{ fontSize: '10px', color: '#64748B' }}>{settings.companyName}</div>
           </div>
-        )}
+        </div>
       </div>
       {renderMarketingPage()}
     </>
@@ -1017,8 +1005,15 @@ export default function QuoteDocument({
               </h1>
               <div style={{ fontSize: '11px', color: '#047857', fontWeight: '600', marginTop: '2px' }}>{settings.tagline}</div>
               <div style={{ fontSize: '10px', color: '#71717A', marginTop: '2px' }}>
-                GSTIN: <strong>{settings.taxId}</strong> | MIDC Taloja, Navi Mumbai
+                GSTIN: <strong>{settings.taxId}</strong> | {settings.city}, {settings.state}
               </div>
+              {(settings.panNumber || settings.msmeNumber || settings.iecNumber) && (
+                <div style={{ fontSize: '9.5px', color: '#047857', marginTop: '1px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {settings.panNumber && <span>PAN: <strong>{settings.panNumber}</strong></span>}
+                  {settings.msmeNumber && <span>MSME: <strong>{settings.msmeNumber}</strong></span>}
+                  {settings.iecNumber && <span>IEC: <strong>{settings.iecNumber}</strong></span>}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1099,22 +1094,8 @@ export default function QuoteDocument({
                 </td>
                 {modules.hsnCodes && <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', color: '#71717A', fontFamily: 'monospace' }}>{item.hsnCode}</td>}
                 <td style={{ padding: '10px', textAlign: 'center', verticalAlign: 'top', fontWeight: '600' }}>{item.qty} {item.unit}</td>
-                <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontVariantNumeric: 'tabular-nums' }}>
-                  {item.mrp && item.mrp > item.unitPrice ? (
-                    <div>
-                      <div style={{ fontSize: '9px', color: '#A1A1AA', textDecoration: 'line-through' }}>
-                        MRP {formatMoney(item.mrp)}
-                      </div>
-                      <div style={{ fontWeight: '700', color: '#18181B' }}>
-                        {formatMoney(item.unitPrice)}
-                      </div>
-                      <div style={{ fontSize: '8px', color: '#047857', fontWeight: '700' }}>
-                        Disc: -{formatMoney(item.mrp - item.unitPrice)}
-                      </div>
-                    </div>
-                  ) : (
-                    formatMoney(item.unitPrice)
-                  )}
+                <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontVariantNumeric: 'tabular-nums', fontWeight: '700', color: '#18181B' }}>
+                  {formatMoney(item.unitPrice)}
                 </td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', color: '#71717A' }}>{item.taxRate}%</td>
                 <td style={{ padding: '10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '700', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.qty * item.unitPrice)}</td>
@@ -1146,13 +1127,13 @@ export default function QuoteDocument({
                   </div>
 
                   {showQr && (
-                    <div style={{ textAlign: 'center', flexShrink: 0, padding: '3px', background: '#FFFFFF', border: '1px solid #A7F3D0', borderRadius: '4px' }}>
+                    <div style={{ textAlign: 'center', flexShrink: 0, padding: '4px', background: '#FFFFFF', border: '1.5px solid #047857', borderRadius: '6px' }}>
                       <img
                         src={settings.paymentQrUrl}
                         alt="Payment QR"
-                        style={{ width: '60px', height: '60px', objectFit: 'contain', display: 'block' }}
+                        style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', imageRendering: 'pixelated' }}
                       />
-                      <div style={{ fontSize: '7.5px', fontWeight: '800', color: '#047857', marginTop: '2px' }}>SCAN TO PAY</div>
+                      <div style={{ fontSize: '8px', fontWeight: '800', color: '#047857', marginTop: '3px', letterSpacing: '0.04em' }}>SCAN TO PAY</div>
                     </div>
                   )}
                 </div>
@@ -1175,10 +1156,23 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-              <span>Total GST:</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.totalTax)}</span>
-            </div>
+            {quote.taxMode === 'gst_intra' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                  <span>Central Tax (CGST 9%):</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.cgst)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                  <span>State Tax (SGST 9%):</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.sgst)}</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                <span>Integrated Tax (IGST 18%):</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.totalTax)}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #047857', borderBottom: '2px solid #047857', fontSize: '15px', fontWeight: '800', color: '#047857', marginTop: '6px' }}>
               <span>Grand Total:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.grandTotal)}</span>
@@ -1207,27 +1201,25 @@ export default function QuoteDocument({
           </div>
         )}
 
-        {/* Dual Sign-Off */}
-        {modules.dualSignOff && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E4E4E7' }}>
-            <div>
-              <div style={{ fontSize: '10px', color: '#71717A', marginBottom: '35px' }}>Client Acceptance Stamp</div>
-              <div style={{ fontSize: '11px', fontWeight: '700' }}>For {quote.clientName}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '10px', color: '#71717A' }}>Authorized Signatory</div>
-              {quote.signature?.imageUrl ? (
-                <div style={{ height: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <Image src={quote.signature.imageUrl} alt="Signature" width={110} height={35} style={{ objectFit: 'contain' }} />
-                </div>
-              ) : (
-                <div style={{ height: '35px' }}></div>
-              )}
-              <div style={{ fontSize: '11px', fontWeight: '700' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
-              <div style={{ fontSize: '10px', color: '#71717A' }}>{settings.companyName}</div>
-            </div>
+        {/* Company Signatory Block */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E4E4E7' }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '10px', color: '#71717A' }}>Authorized Signatory</div>
+            {(quote.signature?.imageUrl || settings.signatureUrl) ? (
+              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+                <img
+                  src={quote.signature?.imageUrl || settings.signatureUrl}
+                  alt="Signature"
+                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+                />
+              </div>
+            ) : (
+              <div style={{ height: '35px' }}></div>
+            )}
+            <div style={{ fontSize: '11px', fontWeight: '700' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
+            <div style={{ fontSize: '10px', color: '#71717A' }}>{settings.companyName}</div>
           </div>
-        )}
+        </div>
       </div>
       {renderMarketingPage()}
     </>
@@ -1265,7 +1257,10 @@ export default function QuoteDocument({
           </h1>
           <div style={{ fontSize: '12px', marginTop: '3px' }}>{settings.address}, {settings.city} - {settings.pincode}</div>
           <div style={{ fontSize: '11px', marginTop: '2px' }}>
-            <strong>GSTIN:</strong> {settings.taxId} &nbsp;|&nbsp; <strong>PAN:</strong> {settings.panNumber} &nbsp;|&nbsp; <strong>Email:</strong> {settings.email}
+            <strong>GSTIN:</strong> {settings.taxId} &nbsp;|&nbsp; <strong>PAN:</strong> {settings.panNumber}
+            {settings.msmeNumber && <>&nbsp;|&nbsp; <strong>MSME:</strong> {settings.msmeNumber}</>}
+            {settings.iecNumber && <>&nbsp;|&nbsp; <strong>IEC:</strong> {settings.iecNumber}</>}
+            &nbsp;|&nbsp; <strong>Email:</strong> {settings.email}
           </div>
         </div>
       </div>
@@ -1322,22 +1317,8 @@ export default function QuoteDocument({
               <td style={{ padding: '8px 6px', verticalAlign: 'top' }}>{item.description}</td>
               {modules.hsnCodes && <td style={{ padding: '8px 6px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'top' }}>{item.hsnCode}</td>}
               <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'top' }}>{item.qty} {item.unit}</td>
-              <td style={{ padding: '8px 6px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top' }}>
-                {item.mrp && item.mrp > item.unitPrice ? (
-                  <div>
-                    <div style={{ fontSize: '9px', color: '#71717A', textDecoration: 'line-through' }}>
-                      MRP {formatMoney(item.mrp)}
-                    </div>
-                    <div style={{ fontWeight: '700' }}>
-                      {formatMoney(item.unitPrice)}
-                    </div>
-                    <div style={{ fontSize: '8px', color: '#047857', fontWeight: '700' }}>
-                      Disc: -{formatMoney(item.mrp - item.unitPrice)}
-                    </div>
-                  </div>
-                ) : (
-                  formatMoney(item.unitPrice)
-                )}
+              <td style={{ padding: '8px 6px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top', fontWeight: '700' }}>
+                {formatMoney(item.unitPrice)}
               </td>
               <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: '700', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top' }}>{formatMoney(item.qty * item.unitPrice)}</td>
             </tr>
@@ -1361,10 +1342,23 @@ export default function QuoteDocument({
             <span>Taxable Value:</span>
             <span>{formatMoney(quote.totals.taxableAmount)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-            <span>Statutory Taxes (GST):</span>
-            <span>{formatMoney(quote.totals.totalTax)}</span>
-          </div>
+          {quote.taxMode === 'gst_intra' ? (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                <span>Central Tax (CGST 9%):</span>
+                <span>{formatMoney(quote.totals.cgst)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                <span>State Tax (SGST 9%):</span>
+                <span>{formatMoney(quote.totals.sgst)}</span>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+              <span>Integrated Tax (IGST 18%):</span>
+              <span>{formatMoney(quote.totals.totalTax)}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '2px solid #18181B', borderBottom: '2px solid #18181B', fontSize: '14px', fontWeight: '800', marginTop: '4px' }}>
             <span>Total Value:</span>
             <span>{formatMoney(quote.totals.grandTotal)}</span>
@@ -1396,13 +1390,13 @@ export default function QuoteDocument({
             </div>
 
             {showQr && (
-              <div style={{ textAlign: 'center', flexShrink: 0, padding: '3px', background: '#FFFFFF', border: '1px solid #18181B', borderRadius: '3px' }}>
+              <div style={{ textAlign: 'center', flexShrink: 0, padding: '4px', background: '#FFFFFF', border: '1.5px solid #18181B', borderRadius: '4px' }}>
                 <img
                   src={settings.paymentQrUrl}
                   alt="Payment QR"
-                  style={{ width: '60px', height: '60px', objectFit: 'contain', display: 'block' }}
+                  style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', imageRendering: 'pixelated' }}
                 />
-                <div style={{ fontSize: '7.5px', fontWeight: '800', marginTop: '2px' }}>SCAN TO PAY</div>
+                <div style={{ fontSize: '8px', fontWeight: '800', marginTop: '3px', letterSpacing: '0.04em' }}>SCAN TO PAY</div>
               </div>
             )}
           </div>
@@ -1430,16 +1424,25 @@ export default function QuoteDocument({
         </div>
       )}
 
-      {modules.dualSignOff && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginTop: '30px', paddingTop: '16px', borderTop: '1px solid #18181B', fontSize: '11px' }}>
-          <div>Client Signature &amp; Stamp</div>
-          <div style={{ textAlign: 'right' }}>
-            <div>For <strong>{settings.companyName}</strong></div>
-            <div style={{ marginTop: '30px', fontWeight: '700' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
-            <div style={{ fontSize: '10px' }}>Authorized Signatory</div>
-          </div>
+      {/* Company Signatory Block */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '30px', paddingTop: '16px', borderTop: '1px solid #18181B', fontSize: '11px' }}>
+        <div style={{ textAlign: 'right' }}>
+          <div>For <strong>{settings.companyName}</strong></div>
+          {(quote.signature?.imageUrl || settings.signatureUrl) ? (
+            <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0' }}>
+              <img
+                src={quote.signature?.imageUrl || settings.signatureUrl}
+                alt="Authorized Signature"
+                style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block' }}
+              />
+            </div>
+          ) : (
+            <div style={{ height: '30px' }}></div>
+          )}
+          <div style={{ fontWeight: '700' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
+          <div style={{ fontSize: '10px' }}>Authorized Signatory</div>
         </div>
-      )}
+      </div>
     </div>
     {renderMarketingPage()}
   </>

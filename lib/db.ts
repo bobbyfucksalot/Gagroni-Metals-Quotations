@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 interface MongooseCache {
   conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
+  promise: Promise<typeof mongoose | null> | null;
 }
 
 declare global {
@@ -16,7 +16,7 @@ if (!global.mongooseCache) {
   global.mongooseCache = cached;
 }
 
-export async function connectDB() {
+export async function connectDB(): Promise<typeof mongoose | null> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return null;
@@ -27,23 +27,33 @@ export async function connectDB() {
   }
 
   if (!cached.promise) {
-    const opts = {
+    const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
       dbName: 'Quotation',
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 4000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 30000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
     };
 
-    cached.promise = mongoose.connect(uri, opts).then((m: typeof mongoose) => {
-      console.log(`[MongoDB] Connected successfully to database: "${m.connection.name}"`);
-      return m;
-    });
+    cached.promise = mongoose
+      .connect(uri, opts)
+      .then((m: typeof mongoose) => {
+        console.log(`[MongoDB] Connected to "${m.connection.name}" with connection pooling`);
+        return m;
+      })
+      .catch((e) => {
+        cached.promise = null;
+        console.warn('[MongoDB] Connection failed, using in-memory store:', (e as Error)?.message || e);
+        return null;
+      });
   }
 
   try {
     cached.conn = await cached.promise;
-  } catch (e) {
+  } catch {
     cached.promise = null;
-    console.warn('[MongoDB] Connection error, fallback active:', (e as Error)?.message || e);
     return null;
   }
 
