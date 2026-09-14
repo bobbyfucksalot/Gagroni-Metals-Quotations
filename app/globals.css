@@ -440,19 +440,50 @@
   margin: 0 !important;
 }
 
+/* Quote Document Wrapper - Ensures pure white canvas around document */
+.quote-document-wrapper {
+  background: #FFFFFF;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .quote-document-wrapper {
+    padding: 16px 8px;
+    background: #FFFFFF;
+    background-color: #FFFFFF;
+    border-radius: 8px;
+  }
+}
+
 @media print {
-  html, body {
+  @page {
+    margin: 8mm auto;
     background: #FFFFFF !important;
+  }
+
+  html, body, .qc-layout, .qc-main, .qc-content, .quote-document-wrapper {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    box-shadow: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
   .no-print, .qc-sidebar, .qc-header, .qc-toast, .actions {
     display: none !important;
+  }
+
+  .qc-layout {
+    display: block !important;
+    min-height: auto !important;
   }
 
   .qc-main {

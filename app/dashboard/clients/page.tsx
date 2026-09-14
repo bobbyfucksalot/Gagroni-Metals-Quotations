@@ -173,7 +173,7 @@ export default function ClientsPage() {
         searchQuery === '' ||
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
         c.taxId.toLowerCase().includes(searchQuery.toLowerCase());
 
       return matchesCategory && matchesSearch;
@@ -206,7 +206,7 @@ export default function ClientsPage() {
     setFormData({
       name: client.name,
       contactPerson: client.contactPerson,
-      email: client.email,
+      email: client.email || '',
       phone: client.phone,
       billingAddress: client.billingAddress,
       taxId: client.taxId,
@@ -397,7 +397,7 @@ export default function ClientsPage() {
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px', margin: '8px 0 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Mail size={13} style={{ color: 'var(--text-muted)' }} />
-                      <span>{client.email}</span>
+                      <span>{client.email || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No email</span>}</span>
                     </div>
                     {client.phone && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -506,15 +506,14 @@ export default function ClientsPage() {
 
                     <div>
                       <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>
-                        Email Address *
+                        Email Address <span style={{ fontWeight: 'normal', color: 'var(--text-muted)' }}>(Optional)</span>
                       </label>
                       <input
                         type="email"
-                        required
                         className="qc-input"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="procurement@apexind.com"
+                        placeholder="procurement@apexind.com (optional)"
                       />
                     </div>
 

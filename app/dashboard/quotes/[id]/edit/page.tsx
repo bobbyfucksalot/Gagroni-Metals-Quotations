@@ -847,7 +847,7 @@ export default function EditQuotePage() {
 
           {/* Conditional Preview or Form Editor */}
           {previewMode ? (
-            <div>
+            <div className="quote-document-wrapper">
               {settings && (
                 <QuoteDocument
                   quote={previewQuote}

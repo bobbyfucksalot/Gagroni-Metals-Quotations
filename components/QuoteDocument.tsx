@@ -289,7 +289,7 @@ export default function QuoteDocument({
         }}
       >
         {/* Document Header Title */}
-        <div style={{ textAlign: 'center', padding: '6px 0', borderBottom: '1px solid #000000', background: '#FAFAFA' }}>
+        <div style={{ textAlign: 'center', padding: '6px 0', borderBottom: '1px solid #000000', background: '#FFFFFF' }}>
           <div style={{ fontSize: '15px', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             QUOTATION
           </div>

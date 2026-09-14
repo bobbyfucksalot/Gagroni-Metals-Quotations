@@ -148,7 +148,7 @@ export interface Client {
   id: string;
   name: string;
   contactPerson: string;
-  email: string;
+  email?: string;
   phone: string;
   billingAddress: string;
   taxId: string; // GSTIN

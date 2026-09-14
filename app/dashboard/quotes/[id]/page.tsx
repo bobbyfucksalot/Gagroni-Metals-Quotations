@@ -549,7 +549,7 @@ export default function SingleQuotePage() {
           </div>
 
           {/* Quotation Document View with Live Currency Conversion */}
-          <div style={{ marginBottom: '32px' }}>
+          <div className="quote-document-wrapper" style={{ marginBottom: '32px' }}>
             <QuoteDocument
               quote={quote}
               settings={settings}

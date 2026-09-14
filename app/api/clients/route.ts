@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         (c) =>
           c.name.toLowerCase().includes(search) ||
           c.contactPerson.toLowerCase().includes(search) ||
-          c.email.toLowerCase().includes(search) ||
+          (c.email && c.email.toLowerCase().includes(search)) ||
           c.taxId.toLowerCase().includes(search)
       );
     }
@@ -34,14 +34,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, contactPerson, email, phone, billingAddress, taxId, category, notes } = body;
 
-    if (!name || !email) {
-      return NextResponse.json({ error: 'Client company name and email are required.' }, { status: 400 });
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Client company name is required.' }, { status: 400 });
     }
 
     const newClient = await store.createClient({
-      name,
+      name: name.trim(),
       contactPerson: contactPerson || '',
-      email,
+      email: email ? email.trim() : '',
       phone: phone || '',
       billingAddress: billingAddress || '',
       taxId: taxId || '',

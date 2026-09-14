@@ -58,7 +58,7 @@ const ClientSchema = new Schema(
     id: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     contactPerson: { type: String, default: '' },
-    email: { type: String, required: true },
+    email: { type: String, default: '' },
     phone: { type: String, default: '' },
     billingAddress: { type: String, default: '' },
     taxId: { type: String, default: '' },
