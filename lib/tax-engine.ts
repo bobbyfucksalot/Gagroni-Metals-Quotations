@@ -227,8 +227,31 @@ export function getGstStateCode(stateName: string): string {
   return found ? found.code : '08';
 }
 
-export function determineTaxMode(clientState: string, companyState: string = 'Rajasthan'): 'gst_intra' | 'gst_inter' {
-  const cState = (clientState || '').trim().toLowerCase();
+export function determineTaxMode(
+  clientOrConsigneeState: string,
+  companyState: string = 'Rajasthan',
+  gstin?: string
+): 'gst_intra' | 'gst_inter' {
+  const sellerCode = getGstStateCode(companyState || 'Rajasthan');
+
+  // 1. Check GSTIN prefix first if available (official 2-digit GST state code)
+  if (gstin && typeof gstin === 'string') {
+    const trimmed = gstin.trim();
+    if (trimmed.length >= 2) {
+      const gstPrefix = trimmed.slice(0, 2);
+      if (/^\d{2}$/.test(gstPrefix)) {
+        return gstPrefix === sellerCode ? 'gst_intra' : 'gst_inter';
+      }
+    }
+  }
+
+  // 2. Check state code or state name matching
+  const cCode = getGstStateCode(clientOrConsigneeState);
+  if (cCode === sellerCode) {
+    return 'gst_intra';
+  }
+
+  const cState = (clientOrConsigneeState || '').trim().toLowerCase();
   const sellerState = (companyState || 'Rajasthan').trim().toLowerCase();
 
   // If state matches seller state or both are Rajasthan, apply Intra-state (CGST + SGST)

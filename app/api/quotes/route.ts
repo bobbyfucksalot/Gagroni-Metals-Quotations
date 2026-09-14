@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { store } from '@/lib/store';
-import { calculateQuoteTotals } from '@/lib/tax-engine';
+import { calculateQuoteTotals, determineTaxMode } from '@/lib/tax-engine';
 import { Quote } from '@/types';
 
 export async function GET(request: Request) {
@@ -67,10 +67,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Compute verified totals server-side
+    const settings = await store.getSettings();
+    const effectiveTaxMode = determineTaxMode(
+      body.consigneeState || body.clientState || 'Rajasthan',
+      settings?.state || 'Rajasthan',
+      body.consigneeGst || body.clientGst
+    );
+
+    // Compute verified totals server-side with automatic taxMode
     const totals = calculateQuoteTotals(
       lineItems,
-      taxMode || 'gst_intra',
+      effectiveTaxMode,
       body.extraDiscountPercent || 0,
       body.shipping || 0
     );
@@ -105,7 +112,7 @@ export async function POST(request: Request) {
       issueDate: issueDate || now.split('T')[0],
       validUntil: validUntil || new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
       currency: currency || { base: 'INR', export: 'USD', rate: 1 },
-      taxMode: taxMode || 'gst_intra',
+      taxMode: effectiveTaxMode,
       lineItems,
       corporateFields: corporateFields || {},
       documentModules: documentModules || { dualSignOff: false, amountInWords: true, hsnCodes: true, thumbnails: true },

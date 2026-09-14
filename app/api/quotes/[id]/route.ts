@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { store } from '@/lib/store';
-import { calculateQuoteTotals } from '@/lib/tax-engine';
+import { calculateQuoteTotals, determineTaxMode } from '@/lib/tax-engine';
 import { QuoteStatus, QuoteVersion } from '@/types';
 
 export async function GET(
@@ -31,11 +31,16 @@ export async function PUT(
 
     const body = await request.json();
     const lineItems = body.lineItems || existing.lineItems;
-    const taxMode = body.taxMode || existing.taxMode;
+    const settings = await store.getSettings();
+    const effectiveTaxMode = determineTaxMode(
+      body.consigneeState || body.clientState || existing.consigneeState || existing.clientState || 'Rajasthan',
+      settings?.state || 'Rajasthan',
+      body.consigneeGst || body.clientGst || existing.consigneeGst || existing.clientGst
+    );
 
     const totals = calculateQuoteTotals(
       lineItems,
-      taxMode,
+      effectiveTaxMode,
       body.extraDiscountPercent !== undefined ? body.extraDiscountPercent : existing.totals.extraDiscountPercent,
       body.shipping !== undefined ? body.shipping : existing.totals.shipping
     );
@@ -57,7 +62,7 @@ export async function PUT(
     const updated = await store.updateQuote(id, {
       ...body,
       lineItems,
-      taxMode,
+      taxMode: effectiveTaxMode,
       totals,
       version,
       versionHistory,

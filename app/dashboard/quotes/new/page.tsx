@@ -320,6 +320,14 @@ export default function NewQuotePage() {
     loadInitialData();
   }, []);
 
+  // 100% Automatic GST Engine Synchronization (Protects bank loan compliance)
+  useEffect(() => {
+    const stateToUse = consigneeState || clientState || 'Rajasthan';
+    const gstToUse = consigneeGst || clientGst || '';
+    const autoMode = determineTaxMode(stateToUse, settings?.state || 'Rajasthan', gstToUse);
+    setTaxMode(autoMode);
+  }, [consigneeState, clientState, consigneeGst, clientGst, settings?.state]);
+
   const handleCurrencyChange = async (newCurrency: string) => {
     setSelectedCurrency(newCurrency);
     if (newCurrency !== 'INR') {
@@ -1764,41 +1772,48 @@ export default function NewQuotePage() {
                       <span>{formatINR(totals.grandTotal)}</span>
                     </div>
 
-                    {/* Manual Override Controls */}
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '6px', fontSize: '11px', flexWrap: 'wrap' }}>
-                      <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Override Tax:</span>
-                      <button
-                        type="button"
-                        onClick={() => setTaxMode('gst_intra')}
+                    {/* 100% Automatic Bank & GST Compliance Indicator */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: '8px',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        background: taxMode === 'gst_intra' ? '#ECFDF5' : '#EFF6FF',
+                        border: `1px solid ${taxMode === 'gst_intra' ? '#A7F3D0' : '#BFDBFE'}`,
+                        fontSize: '11px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '13px' }}>⚡</span>
+                        <div>
+                          <strong style={{ color: taxMode === 'gst_intra' ? '#065F46' : '#1E40AF' }}>
+                            {taxMode === 'gst_intra'
+                              ? 'Automatic Intra-State GST (CGST 9% + SGST 9%)'
+                              : 'Automatic Inter-State GST (IGST 18%)'}
+                          </strong>
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '1px' }}>
+                            POS: {consigneeState || clientState || 'Rajasthan'} (Code {consigneeStateCode || clientStateCode || '08'})
+                            &nbsp;• Bank Loan &amp; GST Compliant
+                          </div>
+                        </div>
+                      </div>
+                      <span
                         style={{
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid var(--border-color)',
-                          background: taxMode === 'gst_intra' ? 'var(--accent-emerald)' : '#FFFFFF',
-                          color: taxMode === 'gst_intra' ? '#FFFFFF' : 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          fontWeight: '600',
-                          fontSize: '10.5px',
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          background: '#FFFFFF',
+                          color: taxMode === 'gst_intra' ? '#047857' : '#1D4ED8',
+                          border: `1px solid ${taxMode === 'gst_intra' ? '#A7F3D0' : '#BFDBFE'}`,
+                          flexShrink: 0,
                         }}
                       >
-                        Intra (CGST+SGST)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTaxMode('gst_inter')}
-                        style={{
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid var(--border-color)',
-                          background: taxMode === 'gst_inter' ? '#1E3A8A' : '#FFFFFF',
-                          color: taxMode === 'gst_inter' ? '#FFFFFF' : 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          fontWeight: '600',
-                          fontSize: '10.5px',
-                        }}
-                      >
-                        Inter (IGST 18%)
-                      </button>
+                        🔒 Auto-Calculated
+                      </span>
                     </div>
 
                     <button
