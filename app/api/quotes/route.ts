@@ -10,7 +10,33 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.toLowerCase();
     const clientId = searchParams.get('clientId');
 
+    const todayStr = new Date().toISOString().split('T')[0];
     let quotes = await store.getQuotes();
+
+    // Automatically detect expired validity and transition to Overdue
+    for (const q of quotes) {
+      if (
+        q.status !== 'Paid' &&
+        q.status !== 'Accepted' &&
+        q.status !== 'Rejected' &&
+        q.status !== 'Overdue' &&
+        q.validUntil &&
+        q.validUntil < todayStr
+      ) {
+        q.status = 'Overdue';
+        store.updateQuote(q.id, {
+          status: 'Overdue',
+          statusHistory: [
+            ...(q.statusHistory || []),
+            {
+              status: 'Overdue',
+              timestamp: new Date().toISOString(),
+              note: `Validity expired on ${q.validUntil} (Auto-marked Overdue for follow-up)`,
+            },
+          ],
+        }).catch((err) => console.warn('[Auto-Overdue] Failed to persist status:', err));
+      }
+    }
 
     if (status && status !== 'All') {
       quotes = quotes.filter((q) => q.status.toLowerCase() === status.toLowerCase());

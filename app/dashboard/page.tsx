@@ -89,21 +89,37 @@ export default function DashboardPage() {
     let paidRevenue = 0;
     let pendingAmount = 0;
     let overdueAmount = 0;
+    let overdueCount = 0;
+    let pendingCount = 0;
     let paidOrAcceptedCount = 0;
     const totalCount = quotes.length;
+    const todayStr = new Date().toISOString().split('T')[0];
 
     quotes.forEach((q) => {
       const grandTotal = q.totals?.grandTotal || 0;
+      const isExpired = Boolean(
+        q.validUntil &&
+        q.validUntil < todayStr &&
+        q.status !== 'Paid' &&
+        q.status !== 'Accepted' &&
+        q.status !== 'Rejected'
+      );
+      const isOverdue = q.status === 'Overdue' || isExpired;
+
       if (q.status === 'Paid') {
         paidRevenue += grandTotal;
         paidOrAcceptedCount += 1;
-      } else if (q.status === 'Sent' || q.status === 'Draft') {
-        pendingAmount += grandTotal;
-      } else if (q.status === 'Overdue' || q.status === 'Rejected') {
+      } else if (isOverdue) {
         overdueAmount += grandTotal;
+        overdueCount += 1;
       } else if (q.status === 'Accepted') {
         paidOrAcceptedCount += 1;
         pendingAmount += grandTotal;
+        pendingCount += 1;
+      } else {
+        // Draft or Sent
+        pendingAmount += grandTotal;
+        pendingCount += 1;
       }
     });
 
@@ -113,6 +129,8 @@ export default function DashboardPage() {
       paidRevenue,
       pendingAmount,
       overdueAmount,
+      overdueCount,
+      pendingCount,
       conversionRate,
       totalCount,
     };
@@ -120,14 +138,24 @@ export default function DashboardPage() {
 
   // Filtered Quotes
   const filteredQuotes = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
     return quotes.filter((q) => {
+      const isExpired = Boolean(
+        q.validUntil &&
+        q.validUntil < todayStr &&
+        q.status !== 'Paid' &&
+        q.status !== 'Accepted' &&
+        q.status !== 'Rejected'
+      );
+      const isOverdue = q.status === 'Overdue' || isExpired;
+
       const matchesTab =
         activeTab === 'All' ||
-        (activeTab === 'Drafts' && q.status === 'Draft') ||
-        (activeTab === 'Sent' && q.status === 'Sent') ||
+        (activeTab === 'Drafts' && q.status === 'Draft' && !isOverdue) ||
+        (activeTab === 'Sent' && q.status === 'Sent' && !isOverdue) ||
         (activeTab === 'Accepted' && q.status === 'Accepted') ||
         (activeTab === 'Paid' && q.status === 'Paid') ||
-        (activeTab === 'Overdue' && q.status === 'Overdue');
+        (activeTab === 'Overdue' && isOverdue);
 
       const matchesSearch =
         searchQuery === '' ||
@@ -271,7 +299,18 @@ export default function DashboardPage() {
           {/* 4 Financial Metric Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
             {/* Card 1: Paid Revenue */}
-            <div className="qc-card qc-card-hover" style={{ padding: '22px' }}>
+            <div 
+              onClick={() => setActiveTab(activeTab === 'Paid' ? 'All' : 'Paid')}
+              className="qc-card qc-card-hover" 
+              style={{ 
+                padding: '22px', 
+                cursor: 'pointer',
+                border: activeTab === 'Paid' ? '2px solid var(--accent-emerald)' : undefined,
+                background: activeTab === 'Paid' ? 'var(--accent-emerald-light)' : undefined,
+                transition: 'all 0.2s ease',
+              }}
+              title="Click to view Paid quotes"
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Paid Revenue</span>
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-emerald-light)', color: 'var(--accent-emerald)', display: 'grid', placeItems: 'center' }}>
@@ -282,12 +321,25 @@ export default function DashboardPage() {
                 {formatINR(metrics.paidRevenue)}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: 'var(--accent-emerald)', fontWeight: '700' }}>↑ 14.2%</span> vs last month
+                <span style={{ color: 'var(--accent-emerald)', fontWeight: '700' }}>
+                  {quotes.filter(q => q.status === 'Paid').length} quotes
+                </span> paid
               </div>
             </div>
 
             {/* Card 2: Pending / Sent */}
-            <div className="qc-card qc-card-hover" style={{ padding: '22px' }}>
+            <div 
+              onClick={() => setActiveTab(activeTab === 'Sent' ? 'All' : 'Sent')}
+              className="qc-card qc-card-hover" 
+              style={{ 
+                padding: '22px', 
+                cursor: 'pointer',
+                border: activeTab === 'Sent' ? '2px solid #D97706' : undefined,
+                background: activeTab === 'Sent' ? '#FFFBEB' : undefined,
+                transition: 'all 0.2s ease',
+              }}
+              title="Click to view Pending / Sent quotes"
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Pending / Sent</span>
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FFFBEB', color: '#B45309', display: 'grid', placeItems: 'center' }}>
@@ -298,12 +350,23 @@ export default function DashboardPage() {
                 {formatINR(metrics.pendingAmount)}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#B45309', fontWeight: '700' }}>{quotes.filter(q => q.status === 'Sent' || q.status === 'Draft').length} quotations</span> awaiting action
+                <span style={{ color: '#B45309', fontWeight: '700' }}>{metrics.pendingCount} quotations</span> awaiting action
               </div>
             </div>
 
             {/* Card 3: Overdue Amount */}
-            <div className="qc-card qc-card-hover" style={{ padding: '22px' }}>
+            <div 
+              onClick={() => setActiveTab(activeTab === 'Overdue' ? 'All' : 'Overdue')}
+              className="qc-card qc-card-hover" 
+              style={{ 
+                padding: '22px', 
+                cursor: 'pointer',
+                border: activeTab === 'Overdue' ? '2px solid #DC2626' : undefined,
+                background: activeTab === 'Overdue' ? '#FFF5F5' : undefined,
+                transition: 'all 0.2s ease',
+              }}
+              title="Click to view Overdue quotes"
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Overdue Amount</span>
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FEF2F2', color: '#B91C1C', display: 'grid', placeItems: 'center' }}>
@@ -314,12 +377,23 @@ export default function DashboardPage() {
                 {formatINR(metrics.overdueAmount)}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#B91C1C', fontWeight: '700' }}>{quotes.filter(q => q.status === 'Overdue').length} quotes</span> need follow-up
+                <span style={{ color: '#B91C1C', fontWeight: '700' }}>{metrics.overdueCount} quotes</span> need follow-up
               </div>
             </div>
 
             {/* Card 4: Conversion Rate */}
-            <div className="qc-card qc-card-hover" style={{ padding: '22px' }}>
+            <div 
+              onClick={() => setActiveTab(activeTab === 'Accepted' ? 'All' : 'Accepted')}
+              className="qc-card qc-card-hover" 
+              style={{ 
+                padding: '22px', 
+                cursor: 'pointer',
+                border: activeTab === 'Accepted' ? '2px solid #2563EB' : undefined,
+                background: activeTab === 'Accepted' ? '#EFF6FF' : undefined,
+                transition: 'all 0.2s ease',
+              }}
+              title="Click to view Accepted quotes"
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Conversion Rate</span>
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#EFF6FF', color: '#1E3A8A', display: 'grid', placeItems: 'center' }}>
@@ -360,25 +434,35 @@ export default function DashboardPage() {
               {/* Tabs & Search */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', gap: '4px', background: '#F4F4F5', padding: '3px', borderRadius: '8px' }}>
-                  {['All', 'Drafts', 'Sent', 'Accepted', 'Paid', 'Overdue'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        background: activeTab === tab ? '#FFFFFF' : 'transparent',
-                        color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                      }}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+                  {['All', 'Drafts', 'Sent', 'Accepted', 'Paid', 'Overdue'].map((tab) => {
+                    const count = tab === 'Overdue' ? metrics.overdueCount : null;
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          background: activeTab === tab ? '#FFFFFF' : 'transparent',
+                          color: activeTab === tab 
+                            ? (tab === 'Overdue' ? '#DC2626' : 'var(--text-primary)') 
+                            : (tab === 'Overdue' && (count || 0) > 0 ? '#DC2626' : 'var(--text-secondary)'),
+                          boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        }}
+                      >
+                        {tab}
+                        {count !== null && count > 0 && (
+                          <span style={{ marginLeft: '4px', background: '#FEE2E2', color: '#DC2626', padding: '1px 5px', borderRadius: '8px', fontSize: '10px' }}>
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div style={{ position: 'relative', width: '180px' }}>
@@ -426,9 +510,15 @@ export default function DashboardPage() {
                           </div>
                         </td>
                         <td>
-                          <span className={`badge-status badge-${q.status.toLowerCase()}`}>
-                            {q.status}
-                          </span>
+                          {q.status === 'Overdue' || (q.validUntil && q.validUntil < new Date().toISOString().split('T')[0] && q.status !== 'Paid' && q.status !== 'Accepted' && q.status !== 'Rejected') ? (
+                            <span className="badge-status badge-overdue">
+                              Overdue
+                            </span>
+                          ) : (
+                            <span className={`badge-status badge-${q.status.toLowerCase()}`}>
+                              {q.status}
+                            </span>
+                          )}
                         </td>
                         <td className="tabular-nums" style={{ textAlign: 'right', fontWeight: '700' }}>
                           {formatINR(q.totals?.grandTotal || 0)}

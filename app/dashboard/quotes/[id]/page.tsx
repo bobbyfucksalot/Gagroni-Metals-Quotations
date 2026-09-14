@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Upload,
   Edit3,
+  AlertTriangle,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -56,6 +57,14 @@ export default function SingleQuotePage() {
     thumbnails: true,
     marketingPage: true,
   });
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isOverdue = Boolean(
+    quote && (
+      quote.status === 'Overdue' ||
+      (quote.validUntil && quote.validUntil < todayStr && quote.status !== 'Paid' && quote.status !== 'Accepted' && quote.status !== 'Rejected')
+    )
+  );
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -273,8 +282,8 @@ export default function SingleQuotePage() {
                 </Link>
                 <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ color: 'var(--accent-emerald)' }}>📄</span> Quotation: {quote.quoteNumber}
-                  <span className={`badge-status badge-${quote.status.toLowerCase()}`}>
-                    {quote.status.toUpperCase()}
+                  <span className={`badge-status badge-${isOverdue ? 'overdue' : quote.status.toLowerCase()}`}>
+                    {isOverdue ? 'OVERDUE' : quote.status.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -544,9 +553,69 @@ export default function SingleQuotePage() {
                     Mark Sent
                   </button>
                 )}
+                {quote.status !== 'Overdue' && quote.status !== 'Paid' && (
+                  <button
+                    onClick={() => handleStatusChange('Overdue')}
+                    className="btn-secondary"
+                    style={{ height: '28px', fontSize: '11px', padding: '0 10px', color: '#B91C1C', borderColor: '#FCA5A5', background: '#FEF2F2' }}
+                  >
+                    <AlertTriangle size={12} /> Mark Overdue
+                  </button>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Overdue / Follow-up Alert Banner */}
+          {isOverdue && (
+            <div
+              className="no-print"
+              style={{
+                background: '#FEF2F2',
+                border: '1.5px solid #FCA5A5',
+                borderRadius: '12px',
+                padding: '14px 20px',
+                marginBottom: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+                boxShadow: '0 2px 6px rgba(220, 38, 38, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#FEE2E2', color: '#DC2626', display: 'grid', placeItems: 'center' }}>
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#991B1B' }}>
+                    Quotation Overdue / Validity Expired
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#B91C1C', marginTop: '2px' }}>
+                    This quotation expired on {quote.validUntil}. Follow up with {quote.clientName} or revise terms.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  onClick={handleWhatsAppShare}
+                  className="btn-secondary"
+                  style={{ height: '32px', fontSize: '11px', color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5', fontWeight: '700' }}
+                >
+                  <Phone size={13} /> Follow-up on WhatsApp
+                </button>
+                <Link
+                  href={`/dashboard/quotes/${quote.id}/edit`}
+                  className="btn-primary"
+                  style={{ height: '32px', fontSize: '11px', textDecoration: 'none', background: '#DC2626', borderColor: '#DC2626' }}
+                >
+                  <Edit3 size={13} /> Revise &amp; Extend Validity
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Quotation Document View with Live Currency Conversion */}
           <div className="quote-document-wrapper" style={{ marginBottom: '32px' }}>

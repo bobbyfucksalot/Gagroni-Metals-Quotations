@@ -49,17 +49,43 @@ export default function QuotesListPage() {
 
   useEffect(() => {
     fetchQuotes();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') || params.get('status');
+      if (tabParam) {
+        const capitalized = tabParam.charAt(0).toUpperCase() + tabParam.slice(1).toLowerCase();
+        setActiveTab(capitalized);
+      }
+    }
   }, []);
 
+  const overdueCount = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return quotes.filter(q => 
+      q.status === 'Overdue' || 
+      (q.validUntil && q.validUntil < todayStr && q.status !== 'Paid' && q.status !== 'Accepted' && q.status !== 'Rejected')
+    ).length;
+  }, [quotes]);
+
   const filteredQuotes = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
     return quotes.filter((q) => {
+      const isExpired = Boolean(
+        q.validUntil &&
+        q.validUntil < todayStr &&
+        q.status !== 'Paid' &&
+        q.status !== 'Accepted' &&
+        q.status !== 'Rejected'
+      );
+      const isOverdue = q.status === 'Overdue' || isExpired;
+
       const matchesTab =
         activeTab === 'All' ||
-        (activeTab === 'Drafts' && q.status === 'Draft') ||
-        (activeTab === 'Sent' && q.status === 'Sent') ||
+        (activeTab === 'Drafts' && q.status === 'Draft' && !isOverdue) ||
+        (activeTab === 'Sent' && q.status === 'Sent' && !isOverdue) ||
         (activeTab === 'Accepted' && q.status === 'Accepted') ||
         (activeTab === 'Paid' && q.status === 'Paid') ||
-        (activeTab === 'Overdue' && q.status === 'Overdue');
+        (activeTab === 'Overdue' && isOverdue);
 
       const matchesSearch =
         searchQuery === '' ||
@@ -163,25 +189,35 @@ export default function QuotesListPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               {/* Filter Tabs */}
               <div style={{ display: 'flex', gap: '6px', background: '#F4F4F5', padding: '4px', borderRadius: '8px' }}>
-                {['All', 'Drafts', 'Sent', 'Accepted', 'Paid', 'Overdue'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      background: activeTab === tab ? '#FFFFFF' : 'transparent',
-                      color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-secondary)',
-                      boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                    }}
-                  >
-                    {tab}
-                  </button>
-                ))}
+                {['All', 'Drafts', 'Sent', 'Accepted', 'Paid', 'Overdue'].map((tab) => {
+                  const count = tab === 'Overdue' ? overdueCount : null;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        background: activeTab === tab ? '#FFFFFF' : 'transparent',
+                        color: activeTab === tab
+                          ? (tab === 'Overdue' ? '#DC2626' : 'var(--text-primary)')
+                          : (tab === 'Overdue' && (count || 0) > 0 ? '#DC2626' : 'var(--text-secondary)'),
+                        boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      }}
+                    >
+                      {tab}
+                      {count !== null && count > 0 && (
+                        <span style={{ marginLeft: '6px', background: '#FEE2E2', color: '#DC2626', padding: '1px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Search Bar */}
@@ -251,9 +287,15 @@ export default function QuotesListPage() {
                       </div>
                     </td>
                     <td>
-                      <span className={`badge-status badge-${q.status.toLowerCase()}`}>
-                        {q.status}
-                      </span>
+                      {q.status === 'Overdue' || (q.validUntil && q.validUntil < new Date().toISOString().split('T')[0] && q.status !== 'Paid' && q.status !== 'Accepted' && q.status !== 'Rejected') ? (
+                        <span className="badge-status badge-overdue">
+                          Overdue
+                        </span>
+                      ) : (
+                        <span className={`badge-status badge-${q.status.toLowerCase()}`}>
+                          {q.status}
+                        </span>
+                      )}
                     </td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
                       {q.validUntil}

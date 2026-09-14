@@ -72,9 +72,20 @@ export default function AnalyticsPage() {
 
     const clientMap: { [key: string]: { name: string; revenue: number; quotedValue: number; quotesCount: number } } = {};
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
     quotes.forEach((q) => {
       const val = q.totals?.grandTotal || 0;
       totalValue += val;
+
+      const isExpired = Boolean(
+        q.validUntil &&
+        q.validUntil < todayStr &&
+        q.status !== 'Paid' &&
+        q.status !== 'Accepted' &&
+        q.status !== 'Rejected'
+      );
+      const isOverdue = q.status === 'Overdue' || isExpired;
 
       if (q.status === 'Paid') {
         totalRevenue += val;
@@ -82,14 +93,14 @@ export default function AnalyticsPage() {
       } else if (q.status === 'Accepted') {
         acceptedCount++;
         totalRevenue += val;
+      } else if (isOverdue) {
+        overdueCount++;
       } else if (q.status === 'Sent') {
         sentCount++;
         pipelineValue += val;
       } else if (q.status === 'Draft') {
         draftCount++;
         pipelineValue += val;
-      } else if (q.status === 'Overdue') {
-        overdueCount++;
       }
 
       if (!clientMap[q.clientName]) {

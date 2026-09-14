@@ -14,6 +14,29 @@ export async function GET(
     return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
   }
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (
+    quote.status !== 'Paid' &&
+    quote.status !== 'Accepted' &&
+    quote.status !== 'Rejected' &&
+    quote.status !== 'Overdue' &&
+    quote.validUntil &&
+    quote.validUntil < todayStr
+  ) {
+    quote.status = 'Overdue';
+    store.updateQuote(quote.id, {
+      status: 'Overdue',
+      statusHistory: [
+        ...(quote.statusHistory || []),
+        {
+          status: 'Overdue',
+          timestamp: new Date().toISOString(),
+          note: `Validity expired on ${quote.validUntil} (Auto-marked Overdue for follow-up)`,
+        },
+      ],
+    }).catch((err) => console.warn('[Auto-Overdue] Failed to persist status:', err));
+  }
+
   return NextResponse.json({ quote });
 }
 
