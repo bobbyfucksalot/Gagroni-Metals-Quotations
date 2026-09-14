@@ -236,17 +236,17 @@ export default function QuotesListPage() {
           </div>
 
           {/* Quotations Table */}
-          <div className="qc-card" style={{ padding: '0', overflow: 'hidden' }}>
+          <div className="qc-card" style={{ padding: '0', overflow: 'visible', minHeight: '340px' }}>
             <table className="qc-table">
               <thead>
                 <tr>
-                  <th>Quotation #</th>
-                  <th>Client & Contact</th>
+                  <th style={{ borderTopLeftRadius: '11px' }}>Quotation #</th>
+                  <th>Client &amp; Contact</th>
                   <th>Project Description</th>
                   <th>Status</th>
                   <th>Valid Until</th>
                   <th style={{ textAlign: 'right' }}>Total Value</th>
-                  <th style={{ textAlign: 'center', width: '60px' }}>Actions</th>
+                  <th style={{ textAlign: 'center', width: '60px', borderTopRightRadius: '11px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -263,112 +263,122 @@ export default function QuotesListPage() {
                     </tr>
                   ))
                 ) : filteredQuotes.length > 0 ? (
-                  filteredQuotes.map((q) => (
-                    <tr key={q.id}>
-                      <td style={{ fontWeight: '700' }}>
-                      <Link
-                        href={`/dashboard/quotes/${q.id}`}
-                        style={{ color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        {q.quoteNumber}
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', background: '#F4F4F5', padding: '1px 5px', borderRadius: '4px' }}>
-                          v{q.version || 1}
-                        </span>
-                      </Link>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{q.clientName}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{q.clientEmail || q.clientPhone || 'No contact specified'}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{q.title}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                        {q.lineItems?.length || 0} line items · {q.taxMode === 'gst_intra' ? 'CGST+SGST' : 'IGST'}
-                      </div>
-                    </td>
-                    <td>
-                      {q.status === 'Overdue' || (q.validUntil && q.validUntil < new Date().toISOString().split('T')[0] && q.status !== 'Paid' && q.status !== 'Accepted' && q.status !== 'Rejected') ? (
-                        <span className="badge-status badge-overdue">
-                          Overdue
-                        </span>
-                      ) : (
-                        <span className={`badge-status badge-${q.status.toLowerCase()}`}>
-                          {q.status}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                      {q.validUntil}
-                    </td>
-                    <td className="tabular-nums" style={{ textAlign: 'right', fontWeight: '700', fontSize: '14px' }}>
-                      {formatINR(q.totals?.grandTotal || 0)}
-                    </td>
-                    <td style={{ textAlign: 'center', position: 'relative' }}>
-                      <button
-                        onClick={() => setSelectedRowMenu(selectedRowMenu === q.id ? null : q.id)}
-                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-
-                      {selectedRowMenu === q.id && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            right: '16px',
-                            top: '40px',
-                            background: '#FFFFFF',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '8px',
-                            boxShadow: 'var(--shadow-dropdown)',
-                            zIndex: 50,
-                            width: '150px',
-                            padding: '4px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '2px',
-                            textAlign: 'left',
-                          }}
+                  filteredQuotes.map((q, idx) => {
+                    const isLastRows = filteredQuotes.length > 2 && idx >= filteredQuotes.length - 2;
+                    return (
+                      <tr key={q.id}>
+                        <td style={{ fontWeight: '700' }}>
+                        <Link
+                          href={`/dashboard/quotes/${q.id}`}
+                          style={{ color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
-                          <Link
-                            href={`/dashboard/quotes/${q.id}`}
-                            className="qc-nav-item"
-                            style={{ height: '32px', fontSize: '12px', padding: '0 8px' }}
-                          >
-                            <ExternalLink size={13} /> View / Print
-                          </Link>
-                          <Link
-                            href={`/dashboard/quotes/${q.id}/edit`}
-                            className="qc-nav-item"
-                            style={{ height: '32px', fontSize: '12px', padding: '0 8px', color: '#2563EB', fontWeight: '600' }}
-                          >
-                            <Edit3 size={13} /> Edit Quotation
-                          </Link>
-                          <button
-                            onClick={() => {
-                              handleDuplicate(q);
-                              setSelectedRowMenu(null);
-                            }}
-                            className="qc-nav-item"
-                            style={{ height: '32px', fontSize: '12px', padding: '0 8px', border: 'none', width: '100%', cursor: 'pointer' }}
-                          >
-                            <Copy size={13} /> Duplicate
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDelete(q.id);
-                              setSelectedRowMenu(null);
-                            }}
-                            className="qc-nav-item"
-                            style={{ height: '32px', fontSize: '12px', padding: '0 8px', border: 'none', width: '100%', cursor: 'pointer', color: '#B91C1C' }}
-                          >
-                            <Trash2 size={13} /> Delete
-                          </button>
+                          {q.quoteNumber}
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', background: '#F4F4F5', padding: '1px 5px', borderRadius: '4px' }}>
+                            v{q.version || 1}
+                          </span>
+                        </Link>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{q.clientName}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{q.clientEmail || q.clientPhone || 'No contact specified'}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{q.title}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                          {q.lineItems?.length || 0} line items · {q.taxMode === 'gst_intra' ? 'CGST+SGST' : 'IGST'}
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td>
+                        {q.status === 'Overdue' || (q.validUntil && q.validUntil < new Date().toISOString().split('T')[0] && q.status !== 'Paid' && q.status !== 'Accepted' && q.status !== 'Rejected') ? (
+                          <span className="badge-status badge-overdue">
+                            Overdue
+                          </span>
+                        ) : (
+                          <span className={`badge-status badge-${q.status.toLowerCase()}`}>
+                            {q.status}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
+                        {q.validUntil}
+                      </td>
+                      <td className="tabular-nums" style={{ textAlign: 'right', fontWeight: '700', fontSize: '14px' }}>
+                        {formatINR(q.totals?.grandTotal || 0)}
+                      </td>
+                      <td style={{ textAlign: 'center', position: 'relative' }}>
+                        <button
+                          onClick={() => setSelectedRowMenu(selectedRowMenu === q.id ? null : q.id)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+
+                        {selectedRowMenu === q.id && (
+                          <>
+                            <div
+                              onClick={() => setSelectedRowMenu(null)}
+                              style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'transparent' }}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                right: '12px',
+                                top: isLastRows ? 'auto' : '36px',
+                                bottom: isLastRows ? '36px' : 'auto',
+                                background: '#FFFFFF',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                zIndex: 100,
+                                width: '150px',
+                                padding: '5px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                                textAlign: 'left',
+                              }}
+                            >
+                              <Link
+                                href={`/dashboard/quotes/${q.id}`}
+                                className="qc-nav-item"
+                                style={{ height: '32px', fontSize: '12px', padding: '0 8px' }}
+                              >
+                                <ExternalLink size={13} /> View / Print
+                              </Link>
+                              <Link
+                                href={`/dashboard/quotes/${q.id}/edit`}
+                                className="qc-nav-item"
+                                style={{ height: '32px', fontSize: '12px', padding: '0 8px', color: '#2563EB', fontWeight: '600' }}
+                              >
+                                <Edit3 size={13} /> Edit Quotation
+                              </Link>
+                              <button
+                                onClick={() => {
+                                  handleDuplicate(q);
+                                  setSelectedRowMenu(null);
+                                }}
+                                className="qc-nav-item"
+                                style={{ height: '32px', fontSize: '12px', padding: '0 8px', border: 'none', width: '100%', cursor: 'pointer' }}
+                              >
+                                <Copy size={13} /> Duplicate
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDelete(q.id);
+                                  setSelectedRowMenu(null);
+                                }}
+                                className="qc-nav-item"
+                                style={{ height: '32px', fontSize: '12px', padding: '0 8px', border: 'none', width: '100%', cursor: 'pointer', color: '#B91C1C' }}
+                              >
+                                <Trash2 size={13} /> Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                    );
+                  })
               ) : (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
