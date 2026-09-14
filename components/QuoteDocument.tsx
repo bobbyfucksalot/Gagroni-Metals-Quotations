@@ -320,7 +320,7 @@ export default function QuoteDocument({
                 {settings.address}, {settings.city} - {settings.pincode}
               </div>
               <div style={{ fontSize: '10px' }}>
-                <strong>Country:</strong> India &nbsp;|&nbsp; <strong>State Name:</strong> {settings.state}, <strong>Code:</strong> {settings.stateCode || '27'}
+                <strong>Country:</strong> India &nbsp;|&nbsp; <strong>State Name:</strong> {settings.state}, <strong>Code:</strong> {settings.state?.toLowerCase() === 'rajasthan' ? '08' : (settings.stateCode || '08')}
               </div>
               <div style={{ fontSize: '10px', marginTop: '2px' }}>
                 <strong>GSTIN/UIN:</strong> {settings.taxId} &nbsp;|&nbsp; <strong>PAN:</strong> {settings.panNumber}
@@ -763,7 +763,7 @@ export default function QuoteDocument({
               </h1>
               <div style={{ fontSize: '11px', color: '#52525B', marginTop: '2px' }}>{settings.tagline}</div>
               <div style={{ fontSize: '10px', color: '#71717A', marginTop: '2px' }}>
-                GSTIN: <strong>{settings.taxId}</strong> | State: <strong>{settings.state} ({settings.stateCode || '27'})</strong>
+                GSTIN: <strong>{settings.taxId}</strong> | State: <strong>{settings.state} ({settings.state?.toLowerCase() === 'rajasthan' ? '08' : (settings.stateCode || '08')})</strong>
               </div>
               {(settings.panNumber || settings.msmeNumber || settings.iecNumber) && (
                 <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '1px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
