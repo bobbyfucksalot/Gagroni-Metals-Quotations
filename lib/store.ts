@@ -13,7 +13,7 @@ export const initialCompanySettings: CompanySettings = {
   iecNumber: '',
   email: 'sales@gagronimetals.com',
   phone: '+91 98200 45890',
-  website: 'www.gagronimetals.com',
+  website: 'www.gagronimetals.in',
   address: 'Brindawan, Kota - Jhalawar Highway, NH-12',
   city: 'Jhalawar',
   state: 'Rajasthan',

@@ -261,7 +261,7 @@ export default function QuoteDocument({
               <strong>Plant:</strong> {settings.address}, {settings.city} - {settings.pincode}
             </div>
             <div style={{ textAlign: 'right' }}>
-              <strong>Inquiries:</strong> {settings.email} | {settings.phone} | <strong>{settings.website || 'www.gagronimetals.com'}</strong>
+              <strong>Inquiries:</strong> {settings.email} | {settings.phone} | <strong>{settings.website || 'www.gagronimetals.in'}</strong>
             </div>
           </div>
         </div>
@@ -332,8 +332,8 @@ export default function QuoteDocument({
                   {settings.cinNumber && <span><strong>CIN:</strong> {settings.cinNumber}</span>}
                 </div>
               )}
-              <div style={{ fontSize: '10px', color: '#333333', marginTop: '2px' }}>
-                <strong>Contact:</strong> {settings.phone} &nbsp;|&nbsp; <strong>E-Mail:</strong> {settings.email}
+              <div style={{ fontSize: '10px', color: '#333333', marginTop: '2px', lineHeight: '1.4' }}>
+                <strong>Contact:</strong> {settings.phone} &nbsp;|&nbsp; <strong>E-Mail:</strong> {settings.email} &nbsp;|&nbsp; <strong>Website:</strong> {settings.website || 'www.gagronimetals.in'}
               </div>
             </div>
           </div>
@@ -772,6 +772,9 @@ export default function QuoteDocument({
                   {settings.iecNumber && <span>IEC: <strong style={{ color: '#18181B' }}>{settings.iecNumber}</strong></span>}
                 </div>
               )}
+              <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '2px' }}>
+                <strong>Contact:</strong> {settings.phone} &nbsp;|&nbsp; <strong>Email:</strong> {settings.email} &nbsp;|&nbsp; <strong>Website:</strong> {settings.website || 'www.gagronimetals.in'}
+              </div>
             </div>
           </div>
 
@@ -1046,6 +1049,9 @@ export default function QuoteDocument({
                   {settings.iecNumber && <span>IEC: <strong>{settings.iecNumber}</strong></span>}
                 </div>
               )}
+              <div style={{ fontSize: '9.5px', color: '#047857', marginTop: '2px' }}>
+                <strong>Contact:</strong> {settings.phone} &nbsp;|&nbsp; <strong>Email:</strong> {settings.email} &nbsp;|&nbsp; <strong>Website:</strong> {settings.website || 'www.gagronimetals.in'}
+              </div>
             </div>
           </div>
 
@@ -1309,6 +1315,7 @@ export default function QuoteDocument({
             {settings.msmeNumber && <>&nbsp;|&nbsp; <strong>MSME:</strong> {settings.msmeNumber}</>}
             {settings.iecNumber && <>&nbsp;|&nbsp; <strong>IEC:</strong> {settings.iecNumber}</>}
             &nbsp;|&nbsp; <strong>Email:</strong> {settings.email}
+            &nbsp;|&nbsp; <strong>Website:</strong> {settings.website || 'www.gagronimetals.in'}
           </div>
         </div>
       </div>
