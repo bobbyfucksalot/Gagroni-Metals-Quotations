@@ -218,13 +218,209 @@ export const INDIAN_STATES: IndianState[] = [
   { name: 'West Bengal', code: '19' },
 ];
 
-export function getGstStateCode(stateName: string): string {
-  if (!stateName) return '08';
+export function getStateByCode(code?: string): IndianState | undefined {
+  if (!code || typeof code !== 'string') return undefined;
+  const cleanCode = code.trim().padStart(2, '0');
+  return INDIAN_STATES.find((s) => s.code === cleanCode);
+}
+
+export function getStateByName(stateName?: string): IndianState | undefined {
+  if (!stateName || typeof stateName !== 'string') return undefined;
   const clean = stateName.trim().toLowerCase();
-  const found = INDIAN_STATES.find(
+
+  // 1. Exact match by name or code
+  const direct = INDIAN_STATES.find(
     (s) => s.name.toLowerCase() === clean || s.code === clean
   );
-  return found ? found.code : '08';
+  if (direct) return direct;
+
+  // 2. Common abbreviations and aliases
+  if (clean === 'wb' || clean.includes('west bengal') || clean.includes('bengal')) {
+    return INDIAN_STATES.find((s) => s.code === '19');
+  }
+  if (clean === 'mh' || clean.includes('maharashtra')) {
+    return INDIAN_STATES.find((s) => s.code === '27');
+  }
+  if (clean === 'rj' || clean.includes('rajasthan')) {
+    return INDIAN_STATES.find((s) => s.code === '08');
+  }
+  if (clean === 'dl' || clean.includes('delhi')) {
+    return INDIAN_STATES.find((s) => s.code === '07');
+  }
+  if (clean === 'gj' || clean.includes('gujarat')) {
+    return INDIAN_STATES.find((s) => s.code === '24');
+  }
+  if (clean === 'ka' || clean.includes('karnataka')) {
+    return INDIAN_STATES.find((s) => s.code === '29');
+  }
+  if (clean === 'tn' || clean.includes('tamil nadu')) {
+    return INDIAN_STATES.find((s) => s.code === '33');
+  }
+  if (clean === 'ts' || clean.includes('telangana')) {
+    return INDIAN_STATES.find((s) => s.code === '36');
+  }
+  if (clean === 'ap' || clean.includes('andhra')) {
+    return INDIAN_STATES.find((s) => s.code === '37');
+  }
+  if (clean === 'mp' || clean.includes('madhya pradesh')) {
+    return INDIAN_STATES.find((s) => s.code === '23');
+  }
+  if (clean === 'up' || clean.includes('uttar pradesh')) {
+    return INDIAN_STATES.find((s) => s.code === '09');
+  }
+  if (clean === 'hr' || clean.includes('haryana')) {
+    return INDIAN_STATES.find((s) => s.code === '06');
+  }
+  if (clean === 'pb' || clean.includes('punjab')) {
+    return INDIAN_STATES.find((s) => s.code === '03');
+  }
+  if (clean === 'br' || clean.includes('bihar')) {
+    return INDIAN_STATES.find((s) => s.code === '10');
+  }
+  if (clean.includes('odisha') || clean.includes('orissa')) {
+    return INDIAN_STATES.find((s) => s.code === '21');
+  }
+  if (clean.includes('jharkhand')) {
+    return INDIAN_STATES.find((s) => s.code === '20');
+  }
+  if (clean.includes('chhattisgarh')) {
+    return INDIAN_STATES.find((s) => s.code === '22');
+  }
+  if (clean === 'jk' || clean.includes('kashmir')) {
+    return INDIAN_STATES.find((s) => s.code === '01');
+  }
+  if (clean === 'hp' || clean.includes('himachal')) {
+    return INDIAN_STATES.find((s) => s.code === '02');
+  }
+  if (clean.includes('uttarakhand') || clean.includes('uttaranchal')) {
+    return INDIAN_STATES.find((s) => s.code === '05');
+  }
+  if (clean === 'kl' || clean.includes('kerala')) {
+    return INDIAN_STATES.find((s) => s.code === '32');
+  }
+  if (clean === 'as' || clean.includes('assam')) {
+    return INDIAN_STATES.find((s) => s.code === '18');
+  }
+  if (clean.includes('goa')) {
+    return INDIAN_STATES.find((s) => s.code === '30');
+  }
+
+  // 3. Substring match
+  return INDIAN_STATES.find((s) => s.name.toLowerCase().includes(clean));
+}
+
+export function getStateFromGstin(gstin?: string): IndianState | undefined {
+  if (!gstin || typeof gstin !== 'string') return undefined;
+  const trimmed = gstin.trim();
+  if (trimmed.length < 2) return undefined;
+  const prefix = trimmed.slice(0, 2);
+  if (/^\d{2}$/.test(prefix)) {
+    return getStateByCode(prefix);
+  }
+  return undefined;
+}
+
+export function getStateFromAddress(address?: string): IndianState | undefined {
+  if (!address || typeof address !== 'string') return undefined;
+  const lower = address.toLowerCase();
+
+  // Try matching all known states (longest state names first)
+  const sortedStates = [...INDIAN_STATES].sort((a, b) => b.name.length - a.name.length);
+  for (const st of sortedStates) {
+    const pattern = new RegExp(`\\b${st.name.toLowerCase()}\\b`, 'i');
+    if (pattern.test(lower)) {
+      return st;
+    }
+  }
+
+  // Common city / landmark mentions
+  if (/\b(west\s+bengal|kolkata|calcutta|durgapur|howrah|asansol|siliguri|bardhaman)\b/i.test(lower)) {
+    return getStateByCode('19');
+  }
+  if (/\b(maharashtra|mumbai|bombay|pune|nagpur|thane|nashik|navi mumbai)\b/i.test(lower)) {
+    return getStateByCode('27');
+  }
+  if (/\b(delhi|new delhi|ncr)\b/i.test(lower)) {
+    return getStateByCode('07');
+  }
+  if (/\b(rajasthan|jaipur|jodhpur|kota|udaipur|jhalawar|ajmer|bikaner|alwar)\b/i.test(lower)) {
+    return getStateByCode('08');
+  }
+  if (/\b(gujarat|ahmedabad|surat|vadodara|rajkot|bhavnagar)\b/i.test(lower)) {
+    return getStateByCode('24');
+  }
+  if (/\b(bengaluru|bangalore|karnataka|mysuru|mysore)\b/i.test(lower)) {
+    return getStateByCode('29');
+  }
+  if (/\b(hyderabad|telangana|secunderabad)\b/i.test(lower)) {
+    return getStateByCode('36');
+  }
+  if (/\b(chennai|madras|tamil nadu|coimbatore|madurai)\b/i.test(lower)) {
+    return getStateByCode('33');
+  }
+  if (/\b(uttar pradesh|lucknow|kanpur|noida|ghaziabad|agra|varanasi)\b/i.test(lower)) {
+    return getStateByCode('09');
+  }
+  if (/\b(haryana|gurgaon|gurugram|faridabad|panipat)\b/i.test(lower)) {
+    return getStateByCode('06');
+  }
+
+  return undefined;
+}
+
+export function resolvePartyState(party?: {
+  state?: string;
+  stateCode?: string;
+  taxId?: string;
+  billingAddress?: string;
+}): { state: string; stateCode: string } {
+  if (!party) {
+    return { state: 'Rajasthan', stateCode: '08' };
+  }
+
+  // 1. If explicit state name provided and matches a known state
+  if (party.state && party.state.trim()) {
+    const matched = getStateByName(party.state);
+    if (matched) {
+      return { state: matched.name, stateCode: matched.code };
+    }
+  }
+
+  // 2. If stateCode is provided
+  if (party.stateCode && party.stateCode.trim()) {
+    const matched = getStateByCode(party.stateCode);
+    if (matched) {
+      return { state: matched.name, stateCode: matched.code };
+    }
+  }
+
+  // 3. Extract from GSTIN (taxId)
+  if (party.taxId && party.taxId.trim()) {
+    const matched = getStateFromGstin(party.taxId);
+    if (matched) {
+      return { state: matched.name, stateCode: matched.code };
+    }
+  }
+
+  // 4. Extract from Address
+  if (party.billingAddress && party.billingAddress.trim()) {
+    const matched = getStateFromAddress(party.billingAddress);
+    if (matched) {
+      return { state: matched.name, stateCode: matched.code };
+    }
+  }
+
+  // 5. Fallback default
+  return {
+    state: party.state && party.state.trim() ? party.state.trim() : 'Rajasthan',
+    stateCode: party.stateCode && party.stateCode.trim() ? party.stateCode.trim() : '08',
+  };
+}
+
+export function getGstStateCode(stateName: string): string {
+  if (!stateName) return '08';
+  const matched = getStateByName(stateName) || getStateByCode(stateName);
+  return matched ? matched.code : '08';
 }
 
 export function determineTaxMode(
@@ -264,3 +460,4 @@ export function determineTaxMode(
   }
   return 'gst_inter';
 }
+

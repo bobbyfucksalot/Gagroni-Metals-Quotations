@@ -1,5 +1,5 @@
 import { Quote, Client, Product, CompanySettings } from '@/types';
-import { calculateQuoteTotals } from './tax-engine';
+import { calculateQuoteTotals, resolvePartyState } from './tax-engine';
 import { connectDB } from './db';
 import { QuoteModel, ClientModel, ProductModel, SettingModel } from './models';
 
@@ -622,12 +622,24 @@ class DataStore {
       const clients = await ClientModel.find().sort({ createdAt: -1 }).lean();
       const result = clients.map((c: any) => {
         const { _id, __v, ...rest } = c;
-        return rest as Client;
+        const resolved = resolvePartyState(rest);
+        return {
+          ...rest,
+          state: rest.state && rest.state.trim() ? rest.state.trim() : resolved.state,
+          stateCode: rest.stateCode && rest.stateCode.trim() ? rest.stateCode.trim() : resolved.stateCode,
+        } as Client;
       });
       this.clientsCache = { data: result, timestamp: now };
       return result;
     }
-    return this.memoryClients;
+    return this.memoryClients.map((c) => {
+      const resolved = resolvePartyState(c);
+      return {
+        ...c,
+        state: c.state && c.state.trim() ? c.state.trim() : resolved.state,
+        stateCode: c.stateCode && c.stateCode.trim() ? c.stateCode.trim() : resolved.stateCode,
+      };
+    });
   }
 
   async getClientById(id: string): Promise<Client | undefined> {
@@ -642,17 +654,34 @@ class DataStore {
       const client = await ClientModel.findOne({ id }).lean();
       if (client) {
         const { _id, __v, ...rest } = client as any;
-        return rest as Client;
+        const resolved = resolvePartyState(rest);
+        return {
+          ...rest,
+          state: rest.state && rest.state.trim() ? rest.state.trim() : resolved.state,
+          stateCode: rest.stateCode && rest.stateCode.trim() ? rest.stateCode.trim() : resolved.stateCode,
+        } as Client;
       }
       return undefined;
     }
-    return this.memoryClients.find((c) => c.id === id);
+    const foundMem = this.memoryClients.find((c) => c.id === id);
+    if (foundMem) {
+      const resolved = resolvePartyState(foundMem);
+      return {
+        ...foundMem,
+        state: foundMem.state && foundMem.state.trim() ? foundMem.state.trim() : resolved.state,
+        stateCode: foundMem.stateCode && foundMem.stateCode.trim() ? foundMem.stateCode.trim() : resolved.stateCode,
+      };
+    }
+    return undefined;
   }
 
   async createClient(client: Omit<Client, 'id' | 'createdAt'>): Promise<Client> {
     const conn = await connectDB();
+    const resolved = resolvePartyState(client);
     const newClient: Client = {
       ...client,
+      state: client.state && client.state.trim() ? client.state.trim() : resolved.state,
+      stateCode: client.stateCode && client.stateCode.trim() ? client.stateCode.trim() : resolved.stateCode,
       id: `cli-${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
@@ -668,6 +697,17 @@ class DataStore {
 
   async updateClient(id: string, updates: Partial<Client>): Promise<Client | null> {
     const conn = await connectDB();
+    if (updates.taxId || updates.billingAddress || updates.state || updates.stateCode) {
+      const resolved = resolvePartyState({
+        state: updates.state,
+        stateCode: updates.stateCode,
+        taxId: updates.taxId,
+        billingAddress: updates.billingAddress,
+      });
+      if (!updates.state || !updates.state.trim()) updates.state = resolved.state;
+      if (!updates.stateCode || !updates.stateCode.trim()) updates.stateCode = resolved.stateCode;
+    }
+
     if (conn) {
       await this.ensureSeeded();
       const updated = await ClientModel.findOneAndUpdate(
@@ -677,19 +717,31 @@ class DataStore {
       ).lean();
       if (updated) {
         const { _id, __v, ...rest } = updated as any;
+        const resolved = resolvePartyState(rest);
+        const finalClient = {
+          ...rest,
+          state: rest.state && rest.state.trim() ? rest.state.trim() : resolved.state,
+          stateCode: rest.stateCode && rest.stateCode.trim() ? rest.stateCode.trim() : resolved.stateCode,
+        } as Client;
         const memIdx = this.memoryClients.findIndex((c) => c.id === id);
         if (memIdx !== -1) {
-          this.memoryClients[memIdx] = rest as Client;
+          this.memoryClients[memIdx] = finalClient;
         }
         this.clientsCache = null; // Invalidate cache
-        return rest as Client;
+        return finalClient;
       }
     }
 
     const index = this.memoryClients.findIndex((c) => c.id === id);
     if (index === -1) return null;
 
-    this.memoryClients[index] = { ...this.memoryClients[index], ...updates };
+    const merged = { ...this.memoryClients[index], ...updates };
+    const resolved = resolvePartyState(merged);
+    this.memoryClients[index] = {
+      ...merged,
+      state: merged.state && merged.state.trim() ? merged.state.trim() : resolved.state,
+      stateCode: merged.stateCode && merged.stateCode.trim() ? merged.stateCode.trim() : resolved.stateCode,
+    };
     this.clientsCache = null;
     return this.memoryClients[index];
   }

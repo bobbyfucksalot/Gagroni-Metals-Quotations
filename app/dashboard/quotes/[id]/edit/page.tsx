@@ -28,7 +28,7 @@ import SignaturePad from '@/components/SignaturePad';
 import QuoteDocument from '@/components/QuoteDocument';
 import PartySearchSelect from '@/components/PartySearchSelect';
 import { Client, Product, LineItem, CompanySettings, Quote, QuoteTheme, QuoteMarketingPage, QuoteStatus } from '@/types';
-import { calculateQuoteTotals, formatINR, INDIAN_STATES, getGstStateCode, determineTaxMode } from '@/lib/tax-engine';
+import { calculateQuoteTotals, formatINR, INDIAN_STATES, getGstStateCode, determineTaxMode, resolvePartyState, getStateFromGstin } from '@/lib/tax-engine';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
 
 interface ExtraFieldItem {
@@ -166,16 +166,24 @@ export default function EditQuotePage() {
         setClientPhone(q.clientPhone || '');
         setClientAddress(q.clientAddress || '');
         setClientGst(q.clientGst || '');
-        const cState = q.clientState || 'Rajasthan';
+        const resolvedClient = resolvePartyState({
+          state: q.clientState,
+          stateCode: q.clientStateCode,
+          taxId: q.clientGst,
+          billingAddress: q.clientAddress,
+        });
+        const cState = q.clientState || resolvedClient.state;
+        const cCode = q.clientStateCode || resolvedClient.stateCode;
         setClientState(cState);
-        setClientStateCode(q.clientStateCode || getGstStateCode(cState));
+        setClientStateCode(cCode);
 
         setConsigneeName(q.consigneeName || q.clientName || '');
         setConsigneeAddress(q.consigneeAddress || q.clientAddress || '');
         setConsigneeGst(q.consigneeGst || q.clientGst || '');
         const conState = q.consigneeState || cState;
+        const conCode = q.consigneeStateCode || getGstStateCode(conState);
         setConsigneeState(conState);
-        setConsigneeStateCode(q.consigneeStateCode || getGstStateCode(conState));
+        setConsigneeStateCode(conCode);
 
         setIssueDate(q.issueDate || new Date().toISOString().split('T')[0]);
         setValidUntil(q.validUntil || new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]);
@@ -310,19 +318,20 @@ export default function EditQuotePage() {
     setClientPhone(c.phone || '');
     setClientAddress(c.billingAddress || '');
     setClientGst(c.taxId || '');
-    const cState = c.state || 'Rajasthan';
-    const cCode = c.stateCode || getGstStateCode(cState);
-    setClientState(cState);
-    setClientStateCode(cCode);
+
+    // Resolve state and stateCode accurately from party's state, stateCode, GSTIN prefix, or address
+    const { state: resolvedState, stateCode: resolvedCode } = resolvePartyState(c);
+    setClientState(resolvedState);
+    setClientStateCode(resolvedCode);
     setConsigneeName(c.name);
     setConsigneeAddress(c.billingAddress || '');
     setConsigneeGst(c.taxId || '');
-    setConsigneeState(cState);
-    setConsigneeStateCode(cCode);
+    setConsigneeState(resolvedState);
+    setConsigneeStateCode(resolvedCode);
 
-    const autoTax = determineTaxMode(cState, settings?.state || 'Rajasthan');
+    const autoTax = determineTaxMode(resolvedState, settings?.state || 'Rajasthan', c.taxId);
     setTaxMode(autoTax);
-    showToast(`Selected party: ${c.name}`);
+    showToast(`Selected party: ${c.name} • ${resolvedState} (${resolvedCode})`);
   };
 
   const handleClearClient = () => {
@@ -344,6 +353,33 @@ export default function EditQuotePage() {
     }
   };
 
+  const handleClientGstChange = (gstVal: string) => {
+    setClientGst(gstVal);
+    const detected = getStateFromGstin(gstVal);
+    if (detected) {
+      setClientState(detected.name);
+      setClientStateCode(detected.code);
+      if (!consigneeGst || consigneeGst === clientGst) {
+        setConsigneeGst(gstVal);
+        setConsigneeState(detected.name);
+        setConsigneeStateCode(detected.code);
+      }
+      const autoTax = determineTaxMode(detected.name, settings?.state || 'Rajasthan', gstVal);
+      setTaxMode(autoTax);
+    }
+  };
+
+  const handleConsigneeGstChange = (gstVal: string) => {
+    setConsigneeGst(gstVal);
+    const detected = getStateFromGstin(gstVal);
+    if (detected) {
+      setConsigneeState(detected.name);
+      setConsigneeStateCode(detected.code);
+      const autoTax = determineTaxMode(detected.name, settings?.state || 'Rajasthan', gstVal);
+      setTaxMode(autoTax);
+    }
+  };
+
   const handleClientStateChange = (stateName: string) => {
     const code = getGstStateCode(stateName);
     setClientState(stateName);
@@ -352,7 +388,7 @@ export default function EditQuotePage() {
       setConsigneeState(stateName);
       setConsigneeStateCode(code);
     }
-    const autoTax = determineTaxMode(stateName, settings?.state || 'Rajasthan');
+    const autoTax = determineTaxMode(stateName, settings?.state || 'Rajasthan', clientGst);
     setTaxMode(autoTax);
   };
 
@@ -360,7 +396,7 @@ export default function EditQuotePage() {
     const code = getGstStateCode(stateName);
     setConsigneeState(stateName);
     setConsigneeStateCode(code);
-    const autoTax = determineTaxMode(stateName, settings?.state || 'Rajasthan');
+    const autoTax = determineTaxMode(stateName, settings?.state || 'Rajasthan', consigneeGst);
     setTaxMode(autoTax);
   };
 
@@ -981,7 +1017,7 @@ export default function EditQuotePage() {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>GSTIN/UIN</label>
-                          <input type="text" className="qc-input" value={clientGst} onChange={(e) => setClientGst(e.target.value)} />
+                          <input type="text" className="qc-input" value={clientGst} onChange={(e) => handleClientGstChange(e.target.value)} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>Contact Phone</label>
@@ -1030,7 +1066,7 @@ export default function EditQuotePage() {
                       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>Consignee GSTIN</label>
-                          <input type="text" className="qc-input" value={consigneeGst} onChange={(e) => setConsigneeGst(e.target.value)} />
+                          <input type="text" className="qc-input" value={consigneeGst} onChange={(e) => handleConsigneeGstChange(e.target.value)} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>State Code</label>

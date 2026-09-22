@@ -21,7 +21,7 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import { Client, Quote } from '@/types';
-import { formatINR, INDIAN_STATES, getGstStateCode } from '@/lib/tax-engine';
+import { formatINR, INDIAN_STATES, getGstStateCode, getStateFromGstin, resolvePartyState } from '@/lib/tax-engine';
 
 const DEFAULT_CATEGORIES = ['Enterprise', 'Commercial', 'Fabricator', 'Retail'];
 
@@ -203,6 +203,7 @@ export default function ClientsPage() {
     setEditingClient(client);
     setShowAddCategoryInput(false);
     setNewCategoryInput('');
+    const resolved = resolvePartyState(client);
     setFormData({
       name: client.name,
       contactPerson: client.contactPerson,
@@ -210,8 +211,8 @@ export default function ClientsPage() {
       phone: client.phone,
       billingAddress: client.billingAddress,
       taxId: client.taxId,
-      state: client.state || 'Rajasthan',
-      stateCode: client.stateCode || getGstStateCode(client.state || 'Rajasthan'),
+      state: client.state || resolved.state,
+      stateCode: client.stateCode || resolved.stateCode,
       category: client.category,
       notes: client.notes || '',
     });
@@ -538,7 +539,20 @@ export default function ClientsPage() {
                         type="text"
                         className="qc-input"
                         value={formData.taxId}
-                        onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+                        onChange={(e) => {
+                          const taxVal = e.target.value;
+                          const detected = getStateFromGstin(taxVal);
+                          if (detected) {
+                            setFormData({
+                              ...formData,
+                              taxId: taxVal,
+                              state: detected.name,
+                              stateCode: detected.code,
+                            });
+                          } else {
+                            setFormData({ ...formData, taxId: taxVal });
+                          }
+                        }}
                         placeholder="27AABCA1234A1Z1"
                       />
                     </div>

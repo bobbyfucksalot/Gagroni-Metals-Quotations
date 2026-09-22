@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, Building, User, Phone, Mail, MapPin, Check, X, ExternalLink, PlusCircle } from 'lucide-react';
 import { Client } from '@/types';
+import { resolvePartyState } from '@/lib/tax-engine';
 
 interface PartySearchSelectProps {
   clients: Client[];
@@ -174,11 +175,14 @@ export default function PartySearchSelect({
                     <Phone size={11} /> {currentClient.phone}
                   </span>
                 )}
-                {currentClient.state && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                    <MapPin size={11} /> {currentClient.state} ({currentClient.stateCode || 'POS'})
-                  </span>
-                )}
+                {(() => {
+                  const resolved = resolvePartyState(currentClient);
+                  return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <MapPin size={11} /> {resolved.state} ({resolved.stateCode})
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -421,11 +425,14 @@ export default function PartySearchSelect({
                                 <Phone size={11} /> {client.phone}
                               </span>
                             )}
-                            {client.state && (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                <MapPin size={11} /> {client.state}
-                              </span>
-                            )}
+                            {(() => {
+                              const resolved = resolvePartyState(client);
+                              return (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                  <MapPin size={11} /> {resolved.state} ({resolved.stateCode})
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { store } from '@/lib/store';
+import { resolvePartyState } from '@/lib/tax-engine';
 
 export async function GET(request: Request) {
   try {
@@ -32,11 +33,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, contactPerson, email, phone, billingAddress, taxId, category, notes } = body;
+    const { name, contactPerson, email, phone, billingAddress, taxId, category, notes, state, stateCode } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Client company name is required.' }, { status: 400 });
     }
+
+    const resolved = resolvePartyState({ state, stateCode, taxId, billingAddress });
 
     const newClient = await store.createClient({
       name: name.trim(),
@@ -45,6 +48,8 @@ export async function POST(request: Request) {
       phone: phone || '',
       billingAddress: billingAddress || '',
       taxId: taxId || '',
+      state: state && state.trim() ? state.trim() : resolved.state,
+      stateCode: stateCode && stateCode.trim() ? stateCode.trim() : resolved.stateCode,
       category: category || 'Commercial',
       notes: notes || '',
     });
