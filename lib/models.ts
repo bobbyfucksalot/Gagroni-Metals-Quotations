@@ -141,6 +141,9 @@ const SettingSchema = new Schema(
     defaultValidDays: { type: Number, default: 15 },
     defaultPdfTheme: { type: String, default: 'tally' },
     currencySymbol: { type: String, default: '₹' },
+    adminEmail: { type: String, default: '' },
+    adminPasswordHash: { type: String, default: '' },
+    adminName: { type: String, default: '' },
   },
   {
     timestamps: false,

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { getSession, getAdminAccount, updateAdminAccount, createSession, COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
+import { getSession, getAdminAccountAsync, updateAdminAccountAsync, createSession, COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
 import { store } from '@/lib/store';
 
 export async function GET() {
@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const admin = getAdminAccount();
+    const admin = await getAdminAccountAsync();
     return NextResponse.json({
       success: true,
       profile: {
@@ -32,18 +32,19 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, currentPassword, newPassword, confirmPassword } = body;
+    const { name, email, currentPassword, newPassword, confirmPassword, isReset, resetToDefault } = body;
 
-    const admin = getAdminAccount();
+    const admin = await getAdminAccountAsync();
     let isNameChanged = false;
     let isEmailChanged = false;
     let isPasswordChanged = false;
+    let resetMessage = '';
 
     // 1. Update Name if provided
     if (name && typeof name === 'string') {
       const trimmedName = name.trim();
       if (trimmedName.length > 0 && trimmedName !== admin.name) {
-        updateAdminAccount({ name: trimmedName });
+        await updateAdminAccountAsync({ name: trimmedName });
         isNameChanged = true;
 
         // Also sync signatoryName in settings so quotation signatories match
@@ -67,13 +68,35 @@ export async function PUT(request: Request) {
       }
 
       if (trimmedEmail !== admin.email.toLowerCase()) {
-        updateAdminAccount({ email: trimmedEmail });
+        await updateAdminAccountAsync({ email: trimmedEmail });
         isEmailChanged = true;
       }
     }
 
-    // 3. Update Password if requested
-    if (newPassword || currentPassword) {
+    // 3. Reset Password to Default
+    if (resetToDefault) {
+      const defaultPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+      const newHash = await bcrypt.hash(defaultPassword, 10);
+      await updateAdminAccountAsync({ passwordHash: newHash });
+      isPasswordChanged = true;
+      resetMessage = `Password has been reset to default (${defaultPassword})`;
+    }
+    // 4. Direct Password Reset (Authenticated admin reset without requiring old password)
+    else if (isReset) {
+      if (!newPassword || newPassword.length < 6) {
+        return NextResponse.json({ error: 'New password must be at least 6 characters long' }, { status: 400 });
+      }
+      if (newPassword !== confirmPassword) {
+        return NextResponse.json({ error: 'New password and confirmation do not match' }, { status: 400 });
+      }
+
+      const newHash = await bcrypt.hash(newPassword, 10);
+      await updateAdminAccountAsync({ passwordHash: newHash });
+      isPasswordChanged = true;
+      resetMessage = 'Password has been reset successfully!';
+    }
+    // 5. Standard Password Change (Requires current password verification)
+    else if (newPassword || currentPassword) {
       if (!currentPassword) {
         return NextResponse.json({ error: 'Current password is required to change password' }, { status: 400 });
       }
@@ -91,8 +114,8 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'New password and confirmation do not match' }, { status: 400 });
       }
 
-      const newHash = bcrypt.hashSync(newPassword, 10);
-      updateAdminAccount({ passwordHash: newHash });
+      const newHash = await bcrypt.hash(newPassword, 10);
+      await updateAdminAccountAsync({ passwordHash: newHash });
       isPasswordChanged = true;
     }
 
@@ -101,7 +124,7 @@ export async function PUT(request: Request) {
     }
 
     // Re-issue JWT session cookie with updated credentials
-    const updatedAdmin = getAdminAccount();
+    const updatedAdmin = await getAdminAccountAsync();
     const token = await createSession(updatedAdmin.email, updatedAdmin.name);
 
     const changes = [];
@@ -109,9 +132,11 @@ export async function PUT(request: Request) {
     if (isEmailChanged) changes.push('Login Email');
     if (isPasswordChanged) changes.push('Password');
 
+    const finalMessage = resetMessage || `Admin ${changes.join(' & ')} updated successfully!`;
+
     const response = NextResponse.json({
       success: true,
-      message: `Admin ${changes.join(' & ')} updated successfully!`,
+      message: finalMessage,
       profile: {
         name: updatedAdmin.name,
         email: updatedAdmin.email,

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Plus, Calendar, Bell } from 'lucide-react';
+import { Search, Plus, Calendar, Bell, User } from 'lucide-react';
 
 import ThemeToggle from '@/components/ThemeToggle';
 
@@ -40,7 +40,7 @@ export default function Header({ onSearchClick }: HeaderProps) {
         <strong style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{getBreadcrumbs()}</strong>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {/* Date pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', paddingRight: '4px' }}>
           <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
@@ -49,6 +49,29 @@ export default function Header({ onSearchClick }: HeaderProps) {
 
         {/* Theme Toggle Button */}
         <ThemeToggle variant="compact" />
+
+        {/* Profile & Password Reset Shortcut */}
+        <Link
+          href="/dashboard/settings?tab=profile"
+          title="Admin Profile & Password Reset"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '7px 12px',
+            borderRadius: '8px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            textDecoration: 'none',
+            fontSize: '12px',
+            fontWeight: '600',
+            color: 'var(--text-primary)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <User size={13} style={{ color: 'var(--accent-emerald)' }} />
+          <span>Profile</span>
+        </Link>
 
         {/* Action shortcut */}
         <Link

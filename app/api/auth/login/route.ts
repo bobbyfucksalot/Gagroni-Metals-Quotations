@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSession, verifyCredentials, COOKIE_NAME, getAdminAccount, SESSION_MAX_AGE } from '@/lib/auth';
+import { createSession, verifyCredentials, COOKIE_NAME, getAdminAccountAsync, SESSION_MAX_AGE } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const currentAdmin = getAdminAccount();
+    const currentAdmin = await getAdminAccountAsync();
     const trimmedEmail = email.trim().toLowerCase();
     const adminEmail = currentAdmin.email.toLowerCase();
 

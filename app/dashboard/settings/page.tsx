@@ -22,6 +22,9 @@ import {
   PenTool,
   Sun,
   Moon,
+  RotateCcw,
+  AlertCircle,
+  Check,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -45,6 +48,13 @@ export default function SettingsPage() {
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [adminSaving, setAdminSaving] = useState(false);
+
+  // Password Management Mode: 'change' | 'reset' | 'default'
+  const [passwordMode, setPasswordMode] = useState<'change' | 'reset' | 'default'>('change');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [showDefaultResetModal, setShowDefaultResetModal] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -83,19 +93,14 @@ export default function SettingsPage() {
     fetchInitial();
   }, []);
 
-  const handleSaveAdminProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveIdentity = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!adminName.trim()) {
       showToast('Admin name cannot be empty');
       return;
     }
     if (!adminEmail.trim()) {
       showToast('Login email cannot be empty');
-      return;
-    }
-
-    if (newPassword && newPassword !== confirmPassword) {
-      showToast('New passwords do not match');
       return;
     }
 
@@ -107,33 +112,143 @@ export default function SettingsPage() {
         body: JSON.stringify({
           name: adminName.trim(),
           email: adminEmail.trim(),
-          currentPassword: currentPassword || undefined,
-          newPassword: newPassword || undefined,
-          confirmPassword: confirmPassword || undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        showToast(data.error || 'Failed to update admin profile');
+        showToast(data.error || 'Failed to update profile');
         setAdminSaving(false);
         return;
       }
 
-      showToast(data.message || 'Admin profile updated successfully!');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      if (data.profile?.name) {
-        setAdminName(data.profile.name);
-      }
-      if (data.profile?.email) {
-        setAdminEmail(data.profile.email);
-      }
+      showToast(data.message || 'Admin profile identity updated successfully!');
+      if (data.profile?.name) setAdminName(data.profile.name);
+      if (data.profile?.email) setAdminEmail(data.profile.email);
     } catch {
       showToast('Network error while updating profile');
     } finally {
       setAdminSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!currentPassword) {
+      showToast('Please enter your current password');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      showToast('New password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast('New passwords do not match');
+      return;
+    }
+
+    setAdminSaving(true);
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Failed to change password');
+        setAdminSaving(false);
+        return;
+      }
+
+      showToast(data.message || 'Password changed successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch {
+      showToast('Network error while changing password');
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
+  const handleDirectResetPassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!resetNewPassword || resetNewPassword.length < 6) {
+      showToast('New reset password must be at least 6 characters');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      showToast('Reset passwords do not match');
+      return;
+    }
+
+    setAdminSaving(true);
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isReset: true,
+          newPassword: resetNewPassword,
+          confirmPassword: resetConfirmPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Failed to reset password');
+        setAdminSaving(false);
+        return;
+      }
+
+      showToast(data.message || 'Password reset successfully!');
+      setResetNewPassword('');
+      setResetConfirmPassword('');
+    } catch {
+      showToast('Network error while resetting password');
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    setAdminSaving(true);
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resetToDefault: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Failed to reset to default password');
+        setAdminSaving(false);
+        return;
+      }
+
+      showToast(data.message || 'Password reset to default (Admin@123)!');
+      setShowDefaultResetModal(false);
+    } catch {
+      showToast('Network error while resetting password');
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
+  const handleSaveAdminProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSaveIdentity(e);
+    if (currentPassword || newPassword) {
+      await handleChangePassword(e);
     }
   };
 
@@ -1050,95 +1165,369 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Change Password Card */}
-                <div className="qc-card" style={{ padding: '28px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <KeyRound size={18} style={{ color: 'var(--accent-emerald)' }} />
-                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
-                      Change Admin Password
-                    </h3>
-                  </div>
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 0, marginBottom: '20px' }}>
-                    Enter your current password followed by your new password to update your login credentials.
-                  </p>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-                        Current Password
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type={showCurrentPw ? 'text' : 'password'}
-                          className="qc-input"
-                          style={{ paddingRight: '36px' }}
-                          placeholder="Enter current password"
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowCurrentPw(!showCurrentPw)}
-                          style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                          title={showCurrentPw ? 'Hide password' : 'Show password'}
-                        >
-                          {showCurrentPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-                        New Password (Min 6 chars)
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type={showNewPw ? 'text' : 'password'}
-                          className="qc-input"
-                          style={{ paddingRight: '36px' }}
-                          placeholder="Enter new password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPw(!showNewPw)}
-                          style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                          title={showNewPw ? 'Hide password' : 'Show password'}
-                        >
-                          {showNewPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-                        Confirm New Password
-                      </label>
-                      <input
-                        type={showNewPw ? 'text' : 'password'}
-                        className="qc-input"
-                        placeholder="Re-enter new password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                       type="button"
-                      onClick={handleSaveAdminProfile}
+                      onClick={handleSaveIdentity}
                       disabled={adminSaving}
                       className="btn-primary"
-                      style={{ height: '42px', padding: '0 20px', fontSize: '13px' }}
+                      style={{ height: '38px', padding: '0 20px', fontSize: '12px' }}
                     >
-                      <Lock size={15} /> {adminSaving ? 'Saving Profile...' : 'Update Admin Profile & Password'}
+                      <Save size={14} /> {adminSaving ? 'Saving...' : 'Save Identity Info'}
                     </button>
                   </div>
                 </div>
+
+                {/* Password & Security Management Card */}
+                <div className="qc-card" style={{ padding: '28px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <KeyRound size={18} style={{ color: 'var(--accent-emerald)' }} />
+                      <div>
+                        <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+                          Password &amp; Security Control
+                        </h3>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                          Update your current password or directly reset your password if forgotten.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Mode Selector Tabs */}
+                    <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-card)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setPasswordMode('change')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          background: passwordMode === 'change' ? 'var(--accent-emerald)' : 'transparent',
+                          color: passwordMode === 'change' ? '#FFFFFF' : 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <Lock size={13} /> Change Password
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPasswordMode('reset')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          background: passwordMode === 'reset' ? '#2563EB' : 'transparent',
+                          color: passwordMode === 'reset' ? '#FFFFFF' : 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <KeyRound size={13} /> Direct Reset Password
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPasswordMode('default')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          background: passwordMode === 'default' ? '#DC2626' : 'transparent',
+                          color: passwordMode === 'default' ? '#FFFFFF' : 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <RotateCcw size={13} /> Factory Reset
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODE 1: CHANGE PASSWORD */}
+                  {passwordMode === 'change' && (
+                    <div style={{ marginTop: '14px' }}>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 0, marginBottom: '18px' }}>
+                        Enter your existing current password followed by your new password to verify and change credentials.
+                      </p>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                            Current Password *
+                          </label>
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              type={showCurrentPw ? 'text' : 'password'}
+                              className="qc-input"
+                              style={{ paddingRight: '36px' }}
+                              placeholder="Enter current password"
+                              value={currentPassword}
+                              onChange={(e) => setCurrentPassword(e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowCurrentPw(!showCurrentPw)}
+                              style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                              title={showCurrentPw ? 'Hide password' : 'Show password'}
+                            >
+                              {showCurrentPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                            New Password (Min 6 chars) *
+                          </label>
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              type={showNewPw ? 'text' : 'password'}
+                              className="qc-input"
+                              style={{ paddingRight: '36px' }}
+                              placeholder="Enter new password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPw(!showNewPw)}
+                              style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                              title={showNewPw ? 'Hide password' : 'Show password'}
+                            >
+                              {showNewPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                            Confirm New Password *
+                          </label>
+                          <input
+                            type={showNewPw ? 'text' : 'password'}
+                            className="qc-input"
+                            placeholder="Re-enter new password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setPasswordMode('reset')}
+                          style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          Forgot Current Password? Use Direct Reset →
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleChangePassword}
+                          disabled={adminSaving}
+                          className="btn-primary"
+                          style={{ height: '40px', padding: '0 20px', fontSize: '13px' }}
+                        >
+                          <Lock size={14} /> {adminSaving ? 'Updating...' : 'Update Password'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MODE 2: DIRECT RESET PASSWORD */}
+                  {passwordMode === 'reset' && (
+                    <div style={{ marginTop: '14px' }}>
+                      <div style={{ padding: '12px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', color: '#1E40AF', fontSize: '12px', marginBottom: '18px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <Check size={16} style={{ marginTop: '2px', flexShrink: 0, color: '#2563EB' }} />
+                        <div>
+                          <strong>Direct Admin Password Reset:</strong> Since you are signed in with an active administrative session, you can reset and set a new password directly below without needing your previous password.
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                            Enter New Password (Min 6 chars) *
+                          </label>
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              type={showResetPw ? 'text' : 'password'}
+                              className="qc-input"
+                              style={{ paddingRight: '36px' }}
+                              placeholder="Create new password"
+                              value={resetNewPassword}
+                              onChange={(e) => setResetNewPassword(e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowResetPw(!showResetPw)}
+                              style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                              title={showResetPw ? 'Hide password' : 'Show password'}
+                            >
+                              {showResetPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
+                            Confirm New Password *
+                          </label>
+                          <input
+                            type={showResetPw ? 'text' : 'password'}
+                            className="qc-input"
+                            placeholder="Re-enter new password"
+                            value={resetConfirmPassword}
+                            onChange={(e) => setResetConfirmPassword(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setPasswordMode('change')}
+                          className="btn-secondary"
+                          style={{ height: '40px', padding: '0 16px', fontSize: '12px' }}
+                        >
+                          Back to Normal Change
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDirectResetPassword}
+                          disabled={adminSaving}
+                          className="btn-primary"
+                          style={{ height: '40px', padding: '0 22px', fontSize: '13px', background: '#2563EB', borderColor: '#1D4ED8' }}
+                        >
+                          <KeyRound size={14} /> {adminSaving ? 'Resetting Password...' : 'Confirm & Reset Password'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MODE 3: FACTORY RESET TO DEFAULT */}
+                  {passwordMode === 'default' && (
+                    <div style={{ marginTop: '14px' }}>
+                      <div style={{ padding: '14px 18px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', color: '#991B1B', fontSize: '12.5px', marginBottom: '18px' }}>
+                        <div style={{ fontWeight: '700', fontSize: '13px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <AlertCircle size={16} /> Factory Default Password Reset
+                        </div>
+                        <div>
+                          This will immediately reset your admin account password to the workspace factory default:
+                          <strong style={{ background: '#FEE2E2', padding: '2px 8px', borderRadius: '4px', margin: '0 6px', fontFamily: 'monospace' }}>
+                            Admin@123
+                          </strong>
+                        </div>
+                        <div style={{ marginTop: '6px', color: '#7F1D1D' }}>
+                          Your login email will remain unchanged: <strong>{adminEmail}</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setPasswordMode('change')}
+                          className="btn-secondary"
+                          style={{ height: '40px', padding: '0 16px', fontSize: '12px' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowDefaultResetModal(true)}
+                          disabled={adminSaving}
+                          className="btn-primary"
+                          style={{ height: '40px', padding: '0 20px', fontSize: '13px', background: '#DC2626', borderColor: '#B91C1C' }}
+                        >
+                          <RotateCcw size={14} /> Reset Password to Default (Admin@123)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Default Reset Confirmation Modal */}
+                {showDefaultResetModal && (
+                  <div
+                    style={{
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'rgba(0, 0, 0, 0.65)',
+                      backdropFilter: 'blur(3px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 9999,
+                      padding: '16px',
+                    }}
+                  >
+                    <div
+                      className="qc-card"
+                      style={{
+                        maxWidth: '440px',
+                        width: '100%',
+                        padding: '28px',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#DC2626', marginBottom: '14px' }}>
+                        <AlertCircle size={24} />
+                        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800' }}>Confirm Password Reset</h3>
+                      </div>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                        Are you sure you want to reset your admin password to factory default:
+                      </p>
+                      <div style={{ padding: '10px 14px', background: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '8px', margin: '14px 0', textAlign: 'center', fontSize: '14px', fontFamily: 'monospace', fontWeight: '700' }}>
+                        Admin@123
+                      </div>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 20px 0' }}>
+                        You will be able to log in immediately using this password.
+                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowDefaultResetModal(false)}
+                          disabled={adminSaving}
+                          className="btn-secondary"
+                          style={{ height: '38px', padding: '0 16px', fontSize: '12px' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetToDefault}
+                          disabled={adminSaving}
+                          className="btn-primary"
+                          style={{ height: '38px', padding: '0 18px', fontSize: '12px', background: '#DC2626', borderColor: '#B91C1C' }}
+                        >
+                          {adminSaving ? 'Resetting...' : 'Yes, Reset to Admin@123'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

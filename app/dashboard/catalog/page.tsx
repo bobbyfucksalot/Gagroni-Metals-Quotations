@@ -465,6 +465,7 @@ export default function CatalogPage() {
                           WebkitLineClamp: isDescExpanded ? 'unset' : 2,
                           WebkitBoxOrient: 'vertical',
                           overflow: isDescExpanded ? 'visible' : 'hidden',
+                          whiteSpace: isDescExpanded ? 'pre-line' : 'normal',
                         }}
                       >
                         {product.description}

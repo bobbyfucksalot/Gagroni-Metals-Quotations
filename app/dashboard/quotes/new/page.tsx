@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Layers,
   Upload,
+  List,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -516,6 +517,28 @@ export default function NewQuotePage() {
     } finally {
       setAiGeneratingIndex(null);
     }
+  };
+
+  const handleFormatItemLines = (index: number) => {
+    const item = lineItems[index];
+    if (!item?.description) return;
+    const current = item.description;
+    let formatted = '';
+    if (!current.includes('\n') && (current.includes(',') || current.includes(';'))) {
+      formatted = current
+        .split(/[,;]\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join(',\n');
+    } else {
+      formatted = current
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join('\n');
+    }
+    handleUpdateItem(index, { description: formatted });
+    showToast('Specifications formatted line-by-line!');
   };
 
   const totals = calculateQuoteTotals(lineItems, taxMode, extraDiscountPercent, shipping);
@@ -1361,34 +1384,58 @@ export default function NewQuotePage() {
                           <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                             Detailed Specifications
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => handleAiDescribe(index)}
-                            disabled={aiGeneratingIndex === index}
-                            style={{
-                              background: 'var(--accent-emerald-light)',
-                              border: '1px solid var(--accent-emerald-border)',
-                              color: 'var(--accent-emerald)',
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              fontSize: '10px',
-                              fontWeight: '700',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <Sparkles size={12} />
-                            {aiGeneratingIndex === index ? 'AI Polishing...' : 'AI Enhance Specs'}
-                          </button>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleFormatItemLines(index)}
+                              title="Format into line-by-line points"
+                              style={{
+                                background: '#F1F5F9',
+                                border: '1px solid #CBD5E1',
+                                color: '#475569',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '10px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              <List size={12} />
+                              Format Lines
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAiDescribe(index)}
+                              disabled={aiGeneratingIndex === index}
+                              style={{
+                                background: 'var(--accent-emerald-light)',
+                                border: '1px solid var(--accent-emerald-border)',
+                                color: 'var(--accent-emerald)',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '10px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              <Sparkles size={12} />
+                              {aiGeneratingIndex === index ? 'AI Polishing...' : 'AI Enhance Specs'}
+                            </button>
+                          </div>
                         </div>
                         <textarea
-                          rows={2}
+                          rows={3}
                           className="qc-textarea"
+                          style={{ minHeight: '68px', resize: 'vertical', lineHeight: '1.45' }}
                           value={item.description}
                           onChange={(e) => handleUpdateItem(index, { description: e.target.value })}
-                          placeholder="Detailed engineering specifications..."
+                          placeholder="Detailed engineering specifications (press Enter for line-by-line points)..."
                         />
                       </div>
                     </div>

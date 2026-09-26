@@ -196,6 +196,7 @@ export default function QuoteDocument({
                     maxWidth: '650px',
                     margin: '0 auto',
                     lineHeight: '1.4',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {mp.description}
@@ -517,7 +518,7 @@ export default function QuoteDocument({
                 <td style={{ padding: '8px 8px', verticalAlign: 'top', borderRight: '1px solid #000000' }}>
                   <div style={{ fontWeight: '800', fontSize: '11px', textTransform: 'uppercase' }}>{item.name}</div>
                   {item.description && (
-                    <div style={{ fontSize: '9.5px', color: '#444444', marginTop: '2px', lineHeight: '1.3' }}>
+                    <div style={{ fontSize: '9.5px', color: '#444444', marginTop: '3px', lineHeight: '1.4', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
                       {item.description}
                     </div>
                   )}
@@ -675,7 +676,8 @@ export default function QuoteDocument({
           <div style={{ padding: '8px 10px', borderBottom: '1px solid #000000', fontSize: '9.5px', background: '#FAFAFA' }}>
             {quote.notes && (
               <div style={{ marginBottom: '6px' }}>
-                <strong style={{ color: '#000000' }}>Customer Scope / Notes:</strong> {quote.notes}
+                <strong style={{ color: '#000000' }}>Customer Scope / Notes:</strong>{' '}
+                <span style={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{quote.notes}</span>
               </div>
             )}
             {quote.terms && (
@@ -849,7 +851,11 @@ export default function QuoteDocument({
                     )}
                     <div>
                       <div style={{ fontWeight: '700', color: '#0F172A' }}>{item.name}</div>
-                      {item.description && <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>{item.description}</div>}
+                      {item.description && (
+                        <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '3px', lineHeight: '1.4', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
+                          {item.description}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -966,7 +972,8 @@ export default function QuoteDocument({
           <div style={{ marginTop: '16px', padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '11px' }}>
             {quote.notes && (
               <div style={{ marginBottom: '8px' }}>
-                <strong style={{ color: '#1E3A8A' }}>Customer Scope / Notes:</strong> <span style={{ color: '#334155' }}>{quote.notes}</span>
+                <strong style={{ color: '#1E3A8A' }}>Customer Scope / Notes:</strong>{' '}
+                <span style={{ color: '#334155', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{quote.notes}</span>
               </div>
             )}
             {quote.terms && (
@@ -1126,7 +1133,11 @@ export default function QuoteDocument({
                     )}
                     <div>
                       <div style={{ fontWeight: '700', color: '#18181B' }}>{item.name}</div>
-                      {item.description && <div style={{ fontSize: '10.5px', color: '#71717A', marginTop: '2px' }}>{item.description}</div>}
+                      {item.description && (
+                        <div style={{ fontSize: '10.5px', color: '#71717A', marginTop: '3px', lineHeight: '1.4', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
+                          {item.description}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -1239,7 +1250,8 @@ export default function QuoteDocument({
           <div style={{ marginTop: '16px', padding: '12px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '11px' }}>
             {quote.notes && (
               <div style={{ marginBottom: '8px' }}>
-                <strong style={{ color: '#047857' }}>Customer Scope / Notes:</strong> <span style={{ color: '#334155' }}>{quote.notes}</span>
+                <strong style={{ color: '#047857' }}>Customer Scope / Notes:</strong>{' '}
+                <span style={{ color: '#334155', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{quote.notes}</span>
               </div>
             )}
             {quote.terms && (
@@ -1369,7 +1381,9 @@ export default function QuoteDocument({
                 </td>
               )}
               <td style={{ padding: '8px 6px', fontWeight: '700', verticalAlign: 'top' }}>{item.name}</td>
-              <td style={{ padding: '8px 6px', verticalAlign: 'top' }}>{item.description}</td>
+              <td style={{ padding: '8px 6px', verticalAlign: 'top', fontSize: '9.5px', lineHeight: '1.4', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
+                {item.description}
+              </td>
               {modules.hsnCodes && <td style={{ padding: '8px 6px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'top' }}>{item.hsnCode}</td>}
               <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'top' }}>{item.qty} {item.unit}</td>
               <td style={{ padding: '6px 6px', textAlign: 'right', verticalAlign: 'top' }}>
@@ -1479,7 +1493,8 @@ export default function QuoteDocument({
         <div style={{ marginTop: '16px', padding: '10px 12px', border: '1px solid #18181B', fontSize: '10.5px' }}>
           {quote.notes && (
             <div style={{ marginBottom: '6px' }}>
-              <strong>Customer Scope / Notes:</strong> {quote.notes}
+              <strong>Customer Scope / Notes:</strong>{' '}
+              <span style={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{quote.notes}</span>
             </div>
           )}
           {quote.terms && (
