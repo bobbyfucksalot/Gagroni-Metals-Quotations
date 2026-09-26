@@ -434,10 +434,9 @@
 }
 
 /* Print Styles for PDF Rendering & Physical Printing */
-/* Print Styles for PDF Rendering & Physical Printing */
 @page {
   size: A4 portrait;
-  margin: 0 !important;
+  margin: 12mm 10mm 12mm 10mm;
 }
 
 /* Quote Document Wrapper - Ensures pure white canvas around document */
@@ -461,11 +460,11 @@
 
 @media print {
   @page {
-    margin: 8mm auto;
-    background: #FFFFFF !important;
+    size: A4 portrait;
+    margin: 12mm 10mm 12mm 10mm;
   }
 
-  html, body, .qc-layout, .qc-main, .qc-content, .quote-document-wrapper {
+  html, body {
     background: #FFFFFF !important;
     background-color: #FFFFFF !important;
     color: #000000 !important;
@@ -477,44 +476,44 @@
     print-color-adjust: exact !important;
   }
 
-  .no-print, .qc-sidebar, .qc-header, .qc-toast, .actions {
-    display: none !important;
-  }
-
-  .qc-layout {
+  .qc-layout, .qc-main, .qc-content, .quote-document-wrapper {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
     display: block !important;
     min-height: auto !important;
   }
 
-  .qc-main {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
+  .no-print, .qc-sidebar, .qc-header, .qc-toast, .actions, .fixed, [role="alert"] {
+    display: none !important;
   }
 
-  .qc-content {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-
-  /* Force exact 16mm left & right gap + 10mm top & bottom gap even when Chrome Margins is set to 'None' */
+  /* Document root container in print - fills the page printable area defined by @page */
   .print-page {
     box-shadow: none !important;
     box-sizing: border-box !important;
-    width: calc(100% - 32mm) !important;
-    max-width: calc(100% - 32mm) !important;
-    margin: 10mm auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
   }
 
-  /* Tally theme keeps its authentic 2px border box with 16mm side gaps */
+  /* Tally theme keeps its authentic 2px border box and cleanly clones borders across page breaks */
   .print-page.tally-document {
     border: 2px solid #000000 !important;
     padding: 0 !important;
-    width: calc(100% - 32mm) !important;
-    max-width: calc(100% - 32mm) !important;
-    margin: 10mm auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    -webkit-box-decoration-break: clone !important;
+    box-decoration-break: clone !important;
   }
 
   /* When printing classic monochrome */
@@ -522,9 +521,11 @@
     border: 1px solid #18181B !important;
     padding: 16px 20px !important;
     border-radius: 4px !important;
-    width: calc(100% - 32mm) !important;
-    max-width: calc(100% - 32mm) !important;
-    margin: 10mm auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    -webkit-box-decoration-break: clone !important;
+    box-decoration-break: clone !important;
   }
 
   /* When printing executive corporate */
@@ -532,9 +533,11 @@
     border: 1px solid #DBEAFE !important;
     padding: 16px 20px !important;
     border-radius: 6px !important;
-    width: calc(100% - 32mm) !important;
-    max-width: calc(100% - 32mm) !important;
-    margin: 10mm auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    -webkit-box-decoration-break: clone !important;
+    box-decoration-break: clone !important;
   }
 
   /* When printing modern */
@@ -542,9 +545,11 @@
     border: 1px solid #A7F3D0 !important;
     padding: 16px 20px !important;
     border-radius: 6px !important;
-    width: calc(100% - 32mm) !important;
-    max-width: calc(100% - 32mm) !important;
-    margin: 10mm auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    -webkit-box-decoration-break: clone !important;
+    box-decoration-break: clone !important;
   }
 
   /* Marketing Showcase Page (Page 2) */
@@ -554,9 +559,46 @@
     border: 1px solid #18181B !important;
     padding: 16px 20px !important;
     border-radius: 4px !important;
-    width: calc(100% - 32mm) !important;
-    max-width: calc(100% - 32mm) !important;
-    margin: 10mm auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Table styling for multi-page print */
+  table {
+    page-break-inside: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  tr, .print-row {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Block-level page break avoidance: Never cut middle of bank details, tax breakdown, signature, or declaration */
+  .quote-bank-tax-block,
+  .quote-totals-block,
+  .quote-signatory-block,
+  .quote-declaration-block,
+  .quote-parties-block,
+  .quote-company-dispatch-block,
+  .quote-header-block,
+  .no-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Terms and Notes list items should avoid breaking internally */
+  .quote-terms-block li {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 }
 

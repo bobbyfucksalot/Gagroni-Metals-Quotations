@@ -209,7 +209,12 @@ export default function SingleQuotePage() {
   };
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = '';
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   const handleWhatsAppShare = () => {

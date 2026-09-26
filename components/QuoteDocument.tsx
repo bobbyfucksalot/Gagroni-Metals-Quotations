@@ -496,7 +496,7 @@ export default function QuoteDocument({
           </thead>
           <tbody>
             {quote.lineItems.map((item, index) => (
-              <tr key={item.id || index} style={{ borderBottom: index === quote.lineItems.length - 1 ? 'none' : '1px solid #E5E5E5' }}>
+              <tr key={item.id || index} className="print-row" style={{ borderBottom: index === quote.lineItems.length - 1 ? 'none' : '1px solid #E5E5E5', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                 <td style={{ padding: '8px 4px', textAlign: 'center', verticalAlign: 'top', borderRight: '1px solid #000000' }}>
                   {index + 1}
                 </td>
@@ -560,7 +560,7 @@ export default function QuoteDocument({
             ))}
 
             {/* Total Row */}
-            <tr style={{ borderTop: '1px solid #000000', borderBottom: '1px solid #000000', background: '#FAFAFA', fontWeight: '800' }}>
+            <tr className="print-row" style={{ borderTop: '1px solid #000000', borderBottom: '1px solid #000000', background: '#FAFAFA', fontWeight: '800', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
               <td colSpan={modules.thumbnails ? 4 : 3} style={{ padding: '6px 8px', textAlign: 'right', borderRight: '1px solid #000000' }}>
                 TOTAL VALUE ({currency})
               </td>
@@ -576,7 +576,17 @@ export default function QuoteDocument({
         </table>
 
         {/* Amount in Words & Bank Details */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', borderBottom: '1px solid #000000', fontSize: '10px' }}>
+        <div
+          className="quote-bank-tax-block"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.2fr 1fr',
+            borderBottom: '1px solid #000000',
+            fontSize: '10px',
+            breakInside: 'avoid',
+            pageBreakInside: 'avoid',
+          }}
+        >
           <div style={{ padding: '8px 10px', borderRight: '1px solid #000000', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               {modules.amountInWords && (
@@ -673,7 +683,17 @@ export default function QuoteDocument({
 
         {/* Terms, Conditions & Customer Notes */}
         {(quote.terms || quote.notes) && (
-          <div style={{ padding: '8px 10px', borderBottom: '1px solid #000000', fontSize: '9.5px', background: '#FAFAFA' }}>
+          <div
+            className="quote-terms-block"
+            style={{
+              padding: '8px 10px',
+              borderBottom: '1px solid #000000',
+              fontSize: '9.5px',
+              background: '#FAFAFA',
+              breakInside: 'avoid',
+              pageBreakInside: 'avoid',
+            }}
+          >
             {quote.notes && (
               <div style={{ marginBottom: '6px' }}>
                 <strong style={{ color: '#000000' }}>Customer Scope / Notes:</strong>{' '}
@@ -693,38 +713,41 @@ export default function QuoteDocument({
           </div>
         )}
 
-        {/* Declaration */}
-        <div style={{ padding: '6px 10px', borderBottom: '1px solid #000000', fontSize: '9.5px', color: '#333333' }}>
-          <strong>Declaration:</strong> We declare that this quotation shows the actual price of the goods described and that all particulars are true and correct.
-        </div>
+        {/* Declaration & Signatory Container */}
+        <div className="quote-signatory-block" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+          {/* Declaration */}
+          <div style={{ padding: '6px 10px', borderBottom: '1px solid #000000', fontSize: '9.5px', color: '#333333' }}>
+            <strong>Declaration:</strong> We declare that this quotation shows the actual price of the goods described and that all particulars are true and correct.
+          </div>
 
-        {/* Company Signatory Block */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', minHeight: '85px', fontSize: '10px' }}>
-          {/* Company Authorized Signatory */}
-          <div style={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', textAlign: 'right', minWidth: '240px' }}>
-            <div style={{ fontWeight: '700' }}>for {settings.companyName}</div>
+          {/* Company Signatory Block */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', minHeight: '85px', fontSize: '10px' }}>
+            {/* Company Authorized Signatory */}
+            <div style={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', textAlign: 'right', minWidth: '240px' }}>
+              <div style={{ fontWeight: '700' }}>for {settings.companyName}</div>
 
-            {(quote.signature?.imageUrl || settings.signatureUrl) ? (
-              <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0', border: 'none', outline: 'none' }}>
-                <img
-                  src={quote.signature?.imageUrl || settings.signatureUrl}
-                  alt="Digital Signature"
-                  style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block', border: 'none', outline: 'none', boxShadow: 'none' }}
-                />
+              {(quote.signature?.imageUrl || settings.signatureUrl) ? (
+                <div style={{ minHeight: '44px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '4px 0', border: 'none', outline: 'none' }}>
+                  <img
+                    src={quote.signature?.imageUrl || settings.signatureUrl}
+                    alt="Digital Signature"
+                    style={{ maxHeight: '44px', maxWidth: '140px', objectFit: 'contain', display: 'block', border: 'none', outline: 'none', boxShadow: 'none' }}
+                  />
+                </div>
+              ) : (
+                <div style={{ height: '35px' }}></div>
+              )}
+
+              <div>
+                <div style={{ fontWeight: '800' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
+                <div style={{ fontSize: '9px', color: '#555555' }}>Authorized Signatory</div>
               </div>
-            ) : (
-              <div style={{ height: '35px' }}></div>
-            )}
-
-            <div>
-              <div style={{ fontWeight: '800' }}>{quote.signature?.signatoryName || settings.signatoryName}</div>
-              <div style={{ fontSize: '9px', color: '#555555' }}>Authorized Signatory</div>
             </div>
           </div>
-        </div>
 
-        <div style={{ textAlign: 'center', padding: '3px 0', fontSize: '8.5px', color: '#666666', borderTop: '1px solid #CCCCCC' }}>
-          This is a Computer Generated Quotation Document
+          <div style={{ textAlign: 'center', padding: '3px 0', fontSize: '8.5px', color: '#666666', borderTop: '1px solid #CCCCCC' }}>
+            This is a Computer Generated Quotation Document
+          </div>
         </div>
       </div>
       {renderMarketingPage()}
@@ -838,7 +861,7 @@ export default function QuoteDocument({
           </thead>
           <tbody>
             {quote.lineItems.map((item, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+              <tr key={idx} className="print-row" style={{ borderBottom: '1px solid #E2E8F0', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                 <td style={{ padding: '10px', verticalAlign: 'top', color: '#64748B' }}>{idx + 1}</td>
                 <td style={{ padding: '10px', verticalAlign: 'top' }}>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
@@ -888,7 +911,7 @@ export default function QuoteDocument({
         </table>
 
         {/* Bottom */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginTop: '16px' }}>
+        <div className="quote-bank-tax-block" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginTop: '16px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
           <div>
             {modules.amountInWords && (
               <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px', fontSize: '11px' }}>
@@ -969,7 +992,7 @@ export default function QuoteDocument({
 
         {/* Terms, Conditions & Scope Notes */}
         {(quote.terms || quote.notes) && (
-          <div style={{ marginTop: '16px', padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '11px' }}>
+          <div className="quote-terms-block" style={{ marginTop: '16px', padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '11px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
             {quote.notes && (
               <div style={{ marginBottom: '8px' }}>
                 <strong style={{ color: '#1E3A8A' }}>Customer Scope / Notes:</strong>{' '}
@@ -990,7 +1013,7 @@ export default function QuoteDocument({
         )}
 
         {/* Company Signatory Block */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+        <div className="quote-signatory-block" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E2E8F0', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '10px', color: '#64748B' }}>Authorized Signatory</div>
             {(quote.signature?.imageUrl || settings.signatureUrl) ? (
@@ -1120,7 +1143,7 @@ export default function QuoteDocument({
           </thead>
           <tbody>
             {quote.lineItems.map((item, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #E4E4E7' }}>
+              <tr key={idx} className="print-row" style={{ borderBottom: '1px solid #E4E4E7', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                 <td style={{ padding: '10px', verticalAlign: 'top', color: '#71717A' }}>{idx + 1}</td>
                 <td style={{ padding: '10px', verticalAlign: 'top' }}>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
@@ -1170,7 +1193,7 @@ export default function QuoteDocument({
         </table>
 
         {/* Totals */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginTop: '16px' }}>
+        <div className="quote-bank-tax-block" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginTop: '16px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
           <div>
             {modules.amountInWords && (
               <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '8px', padding: '10px', fontSize: '11px' }}>
@@ -1247,7 +1270,7 @@ export default function QuoteDocument({
 
         {/* Terms, Conditions & Scope Notes */}
         {(quote.terms || quote.notes) && (
-          <div style={{ marginTop: '16px', padding: '12px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '11px' }}>
+          <div className="quote-terms-block" style={{ marginTop: '16px', padding: '12px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '11px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
             {quote.notes && (
               <div style={{ marginBottom: '8px' }}>
                 <strong style={{ color: '#047857' }}>Customer Scope / Notes:</strong>{' '}
@@ -1268,7 +1291,7 @@ export default function QuoteDocument({
         )}
 
         {/* Company Signatory Block */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E4E4E7' }}>
+        <div className="quote-signatory-block" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #E4E4E7', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '10px', color: '#71717A' }}>Authorized Signatory</div>
             {(quote.signature?.imageUrl || settings.signatureUrl) ? (
@@ -1366,7 +1389,7 @@ export default function QuoteDocument({
         </thead>
         <tbody>
           {quote.lineItems.map((item, idx) => (
-            <tr key={idx} style={{ borderBottom: '1px solid #E4E4E7' }}>
+            <tr key={idx} className="print-row" style={{ borderBottom: '1px solid #E4E4E7', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
               {modules.thumbnails && (
                 <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                   {item.imageUrl ? (
@@ -1411,86 +1434,89 @@ export default function QuoteDocument({
         </tbody>
       </table>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
-        <div style={{ width: '280px', fontSize: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-            <span>Total MRP Value:</span>
-            <strong>{formatMoney(quote.totals.subtotal)}</strong>
-          </div>
-          {quote.totals.itemDiscountTotal > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', color: '#047857', fontWeight: '700' }}>
-              <span>Total Discount (Savings):</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>-{formatMoney(quote.totals.itemDiscountTotal)}</span>
+      {/* Totals & Bank Details Block */}
+      <div className="quote-bank-tax-block" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+          <div style={{ width: '280px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+              <span>Total MRP Value:</span>
+              <strong>{formatMoney(quote.totals.subtotal)}</strong>
             </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-            <span>Taxable Value:</span>
-            <span>{formatMoney(quote.totals.taxableAmount)}</span>
-          </div>
-          {quote.taxMode === 'gst_intra' ? (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                <span>Central Tax (CGST 9%):</span>
-                <span>{formatMoney(quote.totals.cgst)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                <span>State Tax (SGST 9%):</span>
-                <span>{formatMoney(quote.totals.sgst)}</span>
-              </div>
-            </>
-          ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-              <span>Integrated Tax (IGST 18%):</span>
-              <span>{formatMoney(quote.totals.totalTax)}</span>
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '2px solid #18181B', borderBottom: '2px solid #18181B', fontSize: '14px', fontWeight: '800', marginTop: '4px' }}>
-            <span>Total Value:</span>
-            <span>{formatMoney(quote.totals.grandTotal)}</span>
-          </div>
-        </div>
-      </div>
-
-      {modules.amountInWords && (
-        <div style={{ fontSize: '11px', marginTop: '12px', fontStyle: 'italic' }}>
-          <strong>Amount in Words:</strong> {displayAmountInWords}
-        </div>
-      )}
-
-      {/* Payment Remittance / Bank & QR Details */}
-      {(showBank || showQr) && (
-        <div style={{ marginTop: '14px', padding: '8px 12px', border: '1px solid #18181B', fontSize: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-            <div>
-              <div style={{ fontWeight: '800', textTransform: 'uppercase', marginBottom: '2px' }}>
-                {showBank ? "Company's Bank Remittance Details" : 'Direct UPI Payment (Scan & Pay)'}
-              </div>
-              {showBank && (
-                <>
-                  <div><strong>Bank:</strong> {settings.bankName} &nbsp;|&nbsp; <strong>A/c No:</strong> {settings.bankAccountNo}</div>
-                  <div><strong>Branch &amp; IFSC:</strong> {settings.bankBranch} &nbsp;|&nbsp; {settings.bankIfsc}</div>
-                </>
-              )}
-              {settings.upiId && <div><strong>UPI ID:</strong> {settings.upiId}</div>}
-            </div>
-
-            {showQr && (
-              <div style={{ textAlign: 'center', flexShrink: 0, padding: '4px', background: '#FFFFFF', border: '1.5px solid #18181B', borderRadius: '4px' }}>
-                <img
-                  src={settings.paymentQrUrl}
-                  alt="Payment QR"
-                  style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', imageRendering: 'pixelated' }}
-                />
-                <div style={{ fontSize: '8px', fontWeight: '800', marginTop: '3px', letterSpacing: '0.04em' }}>SCAN TO PAY</div>
+            {quote.totals.itemDiscountTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', color: '#047857', fontWeight: '700' }}>
+                <span>Total Discount (Savings):</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>-{formatMoney(quote.totals.itemDiscountTotal)}</span>
               </div>
             )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+              <span>Taxable Value:</span>
+              <span>{formatMoney(quote.totals.taxableAmount)}</span>
+            </div>
+            {quote.taxMode === 'gst_intra' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                  <span>Central Tax (CGST 9%):</span>
+                  <span>{formatMoney(quote.totals.cgst)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                  <span>State Tax (SGST 9%):</span>
+                  <span>{formatMoney(quote.totals.sgst)}</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                <span>Integrated Tax (IGST 18%):</span>
+                <span>{formatMoney(quote.totals.totalTax)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '2px solid #18181B', borderBottom: '2px solid #18181B', fontSize: '14px', fontWeight: '800', marginTop: '4px' }}>
+              <span>Total Value:</span>
+              <span>{formatMoney(quote.totals.grandTotal)}</span>
+            </div>
           </div>
         </div>
-      )}
+
+        {modules.amountInWords && (
+          <div style={{ fontSize: '11px', marginTop: '12px', fontStyle: 'italic' }}>
+            <strong>Amount in Words:</strong> {displayAmountInWords}
+          </div>
+        )}
+
+        {/* Payment Remittance / Bank & QR Details */}
+        {(showBank || showQr) && (
+          <div style={{ marginTop: '14px', padding: '8px 12px', border: '1px solid #18181B', fontSize: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+              <div>
+                <div style={{ fontWeight: '800', textTransform: 'uppercase', marginBottom: '2px' }}>
+                  {showBank ? "Company's Bank Remittance Details" : 'Direct UPI Payment (Scan & Pay)'}
+                </div>
+                {showBank && (
+                  <>
+                    <div><strong>Bank:</strong> {settings.bankName} &nbsp;|&nbsp; <strong>A/c No:</strong> {settings.bankAccountNo}</div>
+                    <div><strong>Branch &amp; IFSC:</strong> {settings.bankBranch} &nbsp;|&nbsp; {settings.bankIfsc}</div>
+                  </>
+                )}
+                {settings.upiId && <div><strong>UPI ID:</strong> {settings.upiId}</div>}
+              </div>
+
+              {showQr && (
+                <div style={{ textAlign: 'center', flexShrink: 0, padding: '4px', background: '#FFFFFF', border: '1.5px solid #18181B', borderRadius: '4px' }}>
+                  <img
+                    src={settings.paymentQrUrl}
+                    alt="Payment QR"
+                    style={{ width: '96px', height: '96px', objectFit: 'contain', display: 'block', imageRendering: 'pixelated' }}
+                  />
+                  <div style={{ fontSize: '8px', fontWeight: '800', marginTop: '3px', letterSpacing: '0.04em' }}>SCAN TO PAY</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Terms, Conditions & Scope Notes */}
       {(quote.terms || quote.notes) && (
-        <div style={{ marginTop: '16px', padding: '10px 12px', border: '1px solid #18181B', fontSize: '10.5px' }}>
+        <div className="quote-terms-block" style={{ marginTop: '16px', padding: '10px 12px', border: '1px solid #18181B', fontSize: '10.5px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
           {quote.notes && (
             <div style={{ marginBottom: '6px' }}>
               <strong>Customer Scope / Notes:</strong>{' '}
@@ -1511,7 +1537,7 @@ export default function QuoteDocument({
       )}
 
       {/* Company Signatory Block */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '30px', paddingTop: '16px', borderTop: '1px solid #18181B', fontSize: '11px' }}>
+      <div className="quote-signatory-block" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '30px', paddingTop: '16px', borderTop: '1px solid #18181B', fontSize: '11px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ textAlign: 'right' }}>
           <div>For <strong>{settings.companyName}</strong></div>
           {(quote.signature?.imageUrl || settings.signatureUrl) ? (
