@@ -452,7 +452,14 @@ class DataStore {
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
-      const quotes = await QuoteModel.find().sort({ createdAt: -1 }).lean();
+      // List view never renders images; they are base64 blobs (MBs each), so skip them at the DB.
+      // Full documents are served by getQuoteById.
+      const quotes = await QuoteModel.find(
+        {},
+        { 'lineItems.imageUrl': 0, 'signature.imageUrl': 0, 'marketingPage.imageUrl': 0 }
+      )
+        .sort({ createdAt: -1 })
+        .lean();
       const result = quotes.map((q: any) => {
         const { _id, __v, ...rest } = q;
         return rest as Quote;
@@ -464,12 +471,7 @@ class DataStore {
   }
 
   async getQuoteById(id: string): Promise<Quote | undefined> {
-    // If quote is already in cached quotes list, return directly in 0ms
-    if (this.quotesCache) {
-      const cached = this.quotesCache.data.find((q) => q.id === id || q.quoteNumber === id);
-      if (cached) return cached;
-    }
-
+    // The cached list omits image blobs, so single-quote reads always go to the DB.
     const conn = await connectDB();
     const altId = id.startsWith('QT-') ? id.replace('QT-', 'GM-') : id.startsWith('GM-') ? id.replace('GM-', 'QT-') : id;
     if (conn) {
@@ -773,9 +775,21 @@ class DataStore {
     const conn = await connectDB();
     if (conn) {
       await this.ensureSeeded();
-      const products = await ProductModel.find().sort({ createdAt: -1 }).lean();
+      // Product photos are base64 blobs (~1MB each). Keep them out of the list and expose a
+      // cacheable image URL instead; remote (http) image URLs pass through untouched.
+      const products = await ProductModel.aggregate([
+        { $sort: { createdAt: -1 } },
+        {
+          $addFields: {
+            _isData: { $eq: [{ $substrCP: [{ $ifNull: ['$imageUrl', ''] }, 0, 5] }, 'data:'] },
+            _imgLen: { $strLenCP: { $ifNull: ['$imageUrl', ''] } },
+          },
+        },
+        { $addFields: { imageUrl: { $cond: ['$_isData', '', { $ifNull: ['$imageUrl', ''] }] } } },
+      ]);
       const result = products.map((p: any) => {
-        const { _id, __v, ...rest } = p;
+        const { _id, __v, _isData, _imgLen, ...rest } = p;
+        if (_isData) rest.imageUrl = `/api/products/${rest.id}/image?v=${_imgLen}`;
         return rest as Product;
       });
       this.productsCache = { data: result, timestamp: now };
@@ -801,6 +815,15 @@ class DataStore {
       return undefined;
     }
     return this.memoryProducts.find((p) => p.id === id);
+  }
+
+  async getProductImage(id: string): Promise<string> {
+    const conn = await connectDB();
+    if (conn) {
+      const doc = await ProductModel.findOne({ id }, { imageUrl: 1 }).lean();
+      return ((doc as any)?.imageUrl as string) || '';
+    }
+    return this.memoryProducts.find((p) => p.id === id)?.imageUrl || '';
   }
 
   async createProduct(product: Omit<Product, 'id' | 'createdAt'>): Promise<Product> {

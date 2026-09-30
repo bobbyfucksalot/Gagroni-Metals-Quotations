@@ -23,6 +23,12 @@ export async function PUT(
     const { id } = await props.params;
     const body = await request.json();
 
+    // The list API exposes photos as /api/products/<id>/image URLs; never write that URL back
+    // over the stored image when a product is edited without changing its photo.
+    if (typeof body.imageUrl === 'string' && body.imageUrl.startsWith('/api/products/')) {
+      delete body.imageUrl;
+    }
+
     const updated = await store.updateProduct(id, body);
     if (!updated) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });

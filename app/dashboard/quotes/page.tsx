@@ -99,11 +99,14 @@ export default function QuotesListPage() {
 
   const handleDuplicate = async (quote: Quote) => {
     try {
+      // The list omits image blobs, so duplicate from the full document.
+      const full = await fetch(`/api/quotes/${quote.id}`).then((r) => r.json());
+      const source: Quote = full.quote || quote;
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...quote,
+          ...source,
           title: `${quote.title} (Copy)`,
           status: 'Draft',
         }),
