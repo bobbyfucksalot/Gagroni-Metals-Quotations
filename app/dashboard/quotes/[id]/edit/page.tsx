@@ -937,9 +937,25 @@ export default function EditQuotePage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
-                      Quotation Subject / Project Title *
-                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: '600' }}>
+                        Quotation Subject / Project Title *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (lineItems.length > 0) {
+                            const validNames = lineItems.map((i) => i.name).filter(Boolean);
+                            if (validNames.length === 1) setTitle(`Quotation for ${validNames[0]}`);
+                            else if (validNames.length === 2) setTitle(`Quotation for ${validNames[0]} & ${validNames[1]}`);
+                            else if (validNames.length > 2) setTitle(`Quotation for ${validNames[0]} (+${validNames.length - 1} more items)`);
+                          }
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-emerald)', fontSize: '10.5px', cursor: 'pointer', padding: 0, fontWeight: '600' }}
+                      >
+                        🔄 Sync with Machine Name
+                      </button>
+                    </div>
                     <input
                       type="text"
                       required

@@ -33,6 +33,7 @@ import QuoteDocument from '@/components/QuoteDocument';
 import { Quote, CompanySettings, QuoteStatus, QuoteTheme } from '@/types';
 import { formatINR } from '@/lib/tax-engine';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
+import { resolveQuoteTitle } from '@/lib/quote-helper';
 
 export default function SingleQuotePage() {
   const params = useParams();
@@ -219,8 +220,9 @@ export default function SingleQuotePage() {
 
   const handleWhatsAppShare = () => {
     if (!quote) return;
+    const resolvedTitle = resolveQuoteTitle(quote);
     const clientPhoneClean = quote.clientPhone.replace(/[^0-9]/g, '');
-    const message = `Namaste ${quote.clientName},\n\nPlease find the commercial quotation for *${quote.title}* from *Gagroni Metals Private Limited*.\n\n*Quotation No:* ${quote.quoteNumber}\n*Total Value:* ${formatINR(quote.totals?.grandTotal || 0)}\n*Validity Until:* ${quote.validUntil}\n\nKindly review and let us know if you require any modifications or wish to confirm the Purchase Order.\n\nBest regards,\nGagroni Metals Team\n${settings?.phone || ''}`;
+    const message = `Namaste ${quote.clientName},\n\nPlease find the commercial quotation for *${resolvedTitle}* from *Gagroni Metals Private Limited*.\n\n*Quotation No:* ${quote.quoteNumber}\n*Total Value:* ${formatINR(quote.totals?.grandTotal || 0)}\n*Validity Until:* ${quote.validUntil}\n\nKindly review and let us know if you require any modifications or wish to confirm the Purchase Order.\n\nBest regards,\nGagroni Metals Team\n${settings?.phone || ''}`;
 
     const url = clientPhoneClean
       ? `https://wa.me/${clientPhoneClean}?text=${encodeURIComponent(message)}`
@@ -231,9 +233,10 @@ export default function SingleQuotePage() {
 
   const handleEmailShare = () => {
     if (!quote) return;
+    const resolvedTitle = resolveQuoteTitle(quote);
     const senderSignatory = settings?.signatoryName || 'Gagroni Metals Team';
-    const subject = `Quotation ${quote.quoteNumber} — ${quote.title} — Gagroni Metals`;
-    const body = `Dear ${quote.clientName},\n\nPlease find attached our quotation for ${quote.title}.\n\nQuotation Ref: ${quote.quoteNumber}\nTotal Amount: ${formatINR(quote.totals?.grandTotal || 0)}\nValid until: ${quote.validUntil}\n\nLet us know if you have any questions.\n\nWarm regards,\n${senderSignatory}\nGagroni Metals Pvt. Ltd.`;
+    const subject = `Quotation ${quote.quoteNumber} — ${resolvedTitle} — Gagroni Metals`;
+    const body = `Dear ${quote.clientName},\n\nPlease find attached our quotation for ${resolvedTitle}.\n\nQuotation Ref: ${quote.quoteNumber}\nTotal Amount: ${formatINR(quote.totals?.grandTotal || 0)}\nValid until: ${quote.validUntil}\n\nLet us know if you have any questions.\n\nWarm regards,\n${senderSignatory}\nGagroni Metals Pvt. Ltd.`;
 
     window.location.href = `mailto:${quote.clientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };

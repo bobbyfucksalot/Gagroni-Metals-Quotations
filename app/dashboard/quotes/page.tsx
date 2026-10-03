@@ -20,6 +20,7 @@ import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import { Quote } from '@/types';
 import { formatINR } from '@/lib/tax-engine';
+import { resolveQuoteTitle } from '@/lib/quote-helper';
 
 export default function QuotesListPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -87,11 +88,14 @@ export default function QuotesListPage() {
         (activeTab === 'Paid' && q.status === 'Paid') ||
         (activeTab === 'Overdue' && isOverdue);
 
+      const titleText = resolveQuoteTitle(q);
       const matchesSearch =
         searchQuery === '' ||
         q.quoteNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         q.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.title.toLowerCase().includes(searchQuery.toLowerCase());
+        q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.lineItems?.some((item) => item.name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchesTab && matchesSearch;
     });
@@ -139,7 +143,7 @@ export default function QuotesListPage() {
     const rows = quotes.map((q) => [
       q.quoteNumber,
       `"${q.clientName}"`,
-      `"${q.title}"`,
+      `"${resolveQuoteTitle(q)}"`,
       q.status,
       q.issueDate,
       q.validUntil,
@@ -286,7 +290,7 @@ export default function QuotesListPage() {
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{q.clientEmail || q.clientPhone || 'No contact specified'}</div>
                       </td>
                       <td>
-                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{q.title}</div>
+                        <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{resolveQuoteTitle(q)}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                           {q.lineItems?.length || 0} line items · {q.taxMode === 'gst_intra' ? 'CGST+SGST' : 'IGST'}
                         </div>

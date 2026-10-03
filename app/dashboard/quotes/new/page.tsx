@@ -43,7 +43,8 @@ export default function NewQuotePage() {
   const [aiGeneratingIndex, setAiGeneratingIndex] = useState<number | null>(null);
 
   // Form State
-  const [title, setTitle] = useState('Fabrication & Structural Metal Works');
+  const [title, setTitle] = useState('');
+  const [isTitleCustomized, setIsTitleCustomized] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientContactPerson, setClientContactPerson] = useState('');
@@ -248,7 +249,9 @@ export default function NewQuotePage() {
                 imageUrl: selectedProduct.imageUrl || '',
               },
             ]);
-            setTitle(`Quotation for ${selectedProduct.name}`);
+            if (!isTitleCustomized) {
+              setTitle(`Quotation for ${selectedProduct.name}`);
+            }
           }
         } else if (availableProducts.length > 0) {
           const p = availableProducts[0];
@@ -275,7 +278,9 @@ export default function NewQuotePage() {
               imageUrl: p.imageUrl || '',
             },
           ]);
-          setTitle(`Quotation for ${p.name}`);
+          if (!isTitleCustomized) {
+            setTitle(`Quotation for ${p.name}`);
+          }
         } else {
           setLineItems([
             {
@@ -465,7 +470,18 @@ export default function NewQuotePage() {
       total: offerPrice,
       imageUrl: product?.imageUrl || '',
     };
-    setLineItems([...lineItems, newItem]);
+    const nextItems = [...lineItems, newItem];
+    setLineItems(nextItems);
+
+    if (!isTitleCustomized) {
+      if (nextItems.length === 1) {
+        setTitle(`Quotation for ${nextItems[0].name}`);
+      } else if (nextItems.length === 2) {
+        setTitle(`Quotation for ${nextItems[0].name} & ${nextItems[1].name}`);
+      } else {
+        setTitle(`Quotation for ${nextItems[0].name} (+${nextItems.length - 1} more items)`);
+      }
+    }
   };
 
   const handleUpdateItem = (index: number, updates: Partial<LineItem>) => {
@@ -486,6 +502,16 @@ export default function NewQuotePage() {
     item.total = item.qty * item.unitPrice;
     next[index] = item;
     setLineItems(next);
+
+    if (updates.name && !isTitleCustomized) {
+      if (next.length === 1) {
+        setTitle(`Quotation for ${next[0].name}`);
+      } else if (next.length === 2) {
+        setTitle(`Quotation for ${next[0].name} & ${next[1].name}`);
+      } else {
+        setTitle(`Quotation for ${next[0].name} (+${next.length - 1} more items)`);
+      }
+    }
   };
 
   const handleRemoveItem = (index: number) => {
@@ -493,7 +519,18 @@ export default function NewQuotePage() {
       showToast('A quotation must contain at least 1 line item.');
       return;
     }
-    setLineItems(lineItems.filter((_, i) => i !== index));
+    const next = lineItems.filter((_, i) => i !== index);
+    setLineItems(next);
+
+    if (!isTitleCustomized && next.length > 0) {
+      if (next.length === 1) {
+        setTitle(`Quotation for ${next[0].name}`);
+      } else if (next.length === 2) {
+        setTitle(`Quotation for ${next[0].name} & ${next[1].name}`);
+      } else {
+        setTitle(`Quotation for ${next[0].name} (+${next.length - 1} more items)`);
+      }
+    }
   };
 
   const handleAiDescribe = async (index: number) => {
@@ -612,11 +649,12 @@ export default function NewQuotePage() {
     setLoading(true);
 
     try {
+      const finalTitle = title.trim() || (lineItems[0]?.name ? `Quotation for ${lineItems[0].name}` : 'Commercial Quotation');
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
+          title: finalTitle,
           clientId: selectedClientId,
           clientName,
           clientContactPerson,
@@ -867,6 +905,77 @@ export default function NewQuotePage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Quotation Header & Validity */}
+              <div className="qc-card" style={{ padding: '24px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Calendar size={16} style={{ color: 'var(--accent-emerald)' }} /> Quotation Header &amp; Validity
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: '600' }}>
+                        Quotation Subject / Project Title *
+                      </label>
+                      {isTitleCustomized && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsTitleCustomized(false);
+                            if (lineItems.length > 0) {
+                              const validNames = lineItems.map((i) => i.name).filter(Boolean);
+                              if (validNames.length === 1) setTitle(`Quotation for ${validNames[0]}`);
+                              else if (validNames.length === 2) setTitle(`Quotation for ${validNames[0]} & ${validNames[1]}`);
+                              else if (validNames.length > 2) setTitle(`Quotation for ${validNames[0]} (+${validNames.length - 1} more items)`);
+                            }
+                          }}
+                          style={{ background: 'none', border: 'none', color: 'var(--accent-emerald)', fontSize: '10.5px', cursor: 'pointer', padding: 0, fontWeight: '600' }}
+                        >
+                          🔄 Sync with Machine Name
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      className="qc-input"
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        setIsTitleCustomized(true);
+                      }}
+                      placeholder="e.g. Quotation for 2 In 1 Tower Hoist Lift Mixer Machine"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
+                      Quotation Issue Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      className="qc-input"
+                      value={issueDate}
+                      onChange={(e) => setIssueDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
+                      Valid Until (Expiry Date) *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      className="qc-input"
+                      value={validUntil}
+                      onChange={(e) => setValidUntil(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Buyer & Consignee */}
               <div className="qc-card" style={{ padding: '24px' }}>
                 <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>

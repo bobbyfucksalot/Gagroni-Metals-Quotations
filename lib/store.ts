@@ -434,6 +434,28 @@ class DataStore {
         await SettingModel.create(initialCompanySettings);
         console.log('[MongoDB] Seeded company settings to Quotation.settings');
       }
+
+      // Auto-migrate legacy quotes where title was erroneously hardcoded
+      try {
+        await QuoteModel.updateMany(
+          {
+            title: 'Quotation for 2 In 1 Tower Hoist Lift Mixer Machine',
+            'lineItems.0.name': { $exists: true, $ne: '2 In 1 Tower Hoist Lift Mixer Machine' }
+          },
+          [
+            {
+              $set: {
+                title: {
+                  $concat: ['Quotation for ', { $ifNull: [{ $arrayElemAt: ['$lineItems.name', 0] }, 'Commercial Equipment'] }]
+                }
+              }
+            }
+          ]
+        );
+      } catch (migrateErr) {
+        console.warn('[MongoDB] Title migration notice:', (migrateErr as Error)?.message || migrateErr);
+      }
+
       this.seeded = true;
     } catch (e) {
       console.warn('[MongoDB] Seeding notice:', (e as Error)?.message || e);

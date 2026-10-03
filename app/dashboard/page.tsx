@@ -33,6 +33,7 @@ import {
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
+import { resolveQuoteTitle } from '@/lib/quote-helper';
 import { Quote, QuoteStatus } from '@/types';
 import { formatINR } from '@/lib/tax-engine';
 
@@ -157,11 +158,14 @@ export default function DashboardPage() {
         (activeTab === 'Paid' && q.status === 'Paid') ||
         (activeTab === 'Overdue' && isOverdue);
 
+      const titleText = resolveQuoteTitle(q);
       const matchesSearch =
         searchQuery === '' ||
         q.quoteNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         q.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.title.toLowerCase().includes(searchQuery.toLowerCase());
+        q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.lineItems?.some((item) => item.name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchesTab && matchesSearch;
     });
@@ -511,7 +515,7 @@ export default function DashboardPage() {
                               </div>
                               <div>
                                 <div style={{ fontWeight: '600', fontSize: '12px' }}>{q.clientName}</div>
-                                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{q.title.slice(0, 28)}...</div>
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{resolveQuoteTitle(q).slice(0, 32)}...</div>
                               </div>
                             </div>
                           </td>
