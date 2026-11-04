@@ -119,6 +119,15 @@ export interface Quote {
   consigneeGst?: string;
   consigneeState?: string;
   consigneeStateCode?: string;
+  isInternational?: boolean;
+  internationalDetails?: {
+    country: string;
+    state?: string;
+    pinCode?: string;
+    address?: string;
+    currency?: string;
+    taxTreatment?: 'zero_rated_lut' | 'taxable_igst';
+  };
   status: QuoteStatus;
   statusHistory: StatusChangeEvent[];
   issueDate: string;

@@ -20,6 +20,8 @@ const QuoteSchema = new Schema(
     consigneeGst: { type: String },
     consigneeState: { type: String },
     consigneeStateCode: { type: String },
+    isInternational: { type: Boolean, default: false },
+    internationalDetails: { type: Schema.Types.Mixed, default: null },
     status: { type: String, default: 'Draft' },
     statusHistory: { type: Array, default: [] },
     issueDate: { type: String },

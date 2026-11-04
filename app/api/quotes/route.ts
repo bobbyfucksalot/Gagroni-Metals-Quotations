@@ -94,10 +94,17 @@ export async function POST(request: Request) {
     }
 
     const settings = await store.getSettings();
-    const effectiveTaxMode = determineTaxMode(
-      body.consigneeState || body.clientState || 'Rajasthan',
-      settings?.state || 'Rajasthan',
-      body.consigneeGst || body.clientGst
+    const effectiveTaxMode = body.isInternational
+      ? (body.taxMode || 'flat')
+      : determineTaxMode(
+          body.consigneeState || body.clientState || 'Rajasthan',
+          settings?.state || 'Rajasthan',
+          body.consigneeGst || body.clientGst
+        );
+
+    const isZeroRated = Boolean(
+      body.isInternational &&
+      (!body.internationalDetails?.taxTreatment || body.internationalDetails.taxTreatment === 'zero_rated_lut')
     );
 
     // Compute verified totals server-side with automatic taxMode
@@ -105,7 +112,8 @@ export async function POST(request: Request) {
       lineItems,
       effectiveTaxMode,
       body.extraDiscountPercent || 0,
-      body.shipping || 0
+      body.shipping || 0,
+      isZeroRated
     );
 
     const now = new Date().toISOString();
@@ -127,6 +135,8 @@ export async function POST(request: Request) {
       consigneeGst: body.consigneeGst || clientGst || '',
       consigneeState: body.consigneeState || body.clientState || 'Rajasthan',
       consigneeStateCode: body.consigneeStateCode || body.clientStateCode || '08',
+      isInternational: Boolean(body.isInternational),
+      internationalDetails: body.internationalDetails || null,
       status: 'Draft',
       statusHistory: [
         {

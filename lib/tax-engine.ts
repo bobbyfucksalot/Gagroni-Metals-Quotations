@@ -103,7 +103,8 @@ export function calculateQuoteTotals(
   items: LineItem[],
   taxMode: 'gst_intra' | 'gst_inter' | 'flat' = 'gst_intra',
   extraDiscountPercent: number = 0,
-  shipping: number = 0
+  shipping: number = 0,
+  isZeroRated: boolean = false
 ): QuoteTotals {
   let subtotal = 0;
   let itemDiscountTotal = 0;
@@ -126,7 +127,7 @@ export function calculateQuoteTotals(
     }
 
     const itemTaxable = Math.max(0, rawTotal - discountAmount);
-    const itemTax = (itemTaxable * (item.taxRate || 0)) / 100;
+    const itemTax = isZeroRated ? 0 : (itemTaxable * (item.taxRate || 0)) / 100;
 
     subtotal += rawTotal;
     itemDiscountTotal += discountAmount;
@@ -138,9 +139,15 @@ export function calculateQuoteTotals(
   const taxableAmount = Math.max(0, baseTaxable - extraDiscountAmount);
 
   // If extra discount was applied, scale the total tax proportionally
-  const effectiveTax = baseTaxable > 0 ? (taxableAmount / baseTaxable) * totalTax : 0;
+  const effectiveTax = isZeroRated
+    ? 0
+    : (baseTaxable > 0 ? (taxableAmount / baseTaxable) * totalTax : 0);
 
-  if (taxMode === 'gst_intra') {
+  if (isZeroRated) {
+    cgst = 0;
+    sgst = 0;
+    igst = 0;
+  } else if (taxMode === 'gst_intra') {
     cgst = effectiveTax / 2;
     sgst = effectiveTax / 2;
     igst = 0;

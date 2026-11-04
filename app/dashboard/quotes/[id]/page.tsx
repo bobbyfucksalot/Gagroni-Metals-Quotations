@@ -84,6 +84,9 @@ export default function SingleQuotePage() {
       if (resQuote.quote) {
         setQuote(resQuote.quote);
         if (resQuote.quote.theme) setSelectedTheme(resQuote.quote.theme);
+        if (resQuote.quote.currency?.export) {
+          setSelectedCurrency(resQuote.quote.currency.export);
+        }
         if (resQuote.quote.documentModules) {
           setModules({
             dualSignOff: resQuote.quote.documentModules.dualSignOff ?? false,

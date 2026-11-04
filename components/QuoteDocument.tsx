@@ -439,18 +439,33 @@ export default function QuoteDocument({
             <div style={{ color: '#333333', marginTop: '2px' }}>
               {quote.consigneeAddress || quote.clientAddress}
             </div>
-            <div style={{ marginTop: '3px' }}>
-              <strong>GSTIN/UIN:</strong> {quote.consigneeGst || quote.clientGst || '—'}
-            </div>
-            <div>
-              <strong>State Name:</strong> {quote.consigneeState || quote.clientState || 'Maharashtra'}, <strong>Code:</strong> {quote.consigneeStateCode || quote.clientStateCode || '27'}
-            </div>
+            {quote.isInternational && quote.internationalDetails?.country ? (
+              <div style={{ marginTop: '3px' }}>
+                <div><strong>Destination Country:</strong> {quote.internationalDetails.country}</div>
+                {quote.internationalDetails.state && <div><strong>State / Province:</strong> {quote.internationalDetails.state}</div>}
+                {quote.internationalDetails.pinCode && <div><strong>Postal Code:</strong> {quote.internationalDetails.pinCode}</div>}
+              </div>
+            ) : (
+              <>
+                <div style={{ marginTop: '3px' }}>
+                  <strong>GSTIN/UIN:</strong> {quote.consigneeGst || quote.clientGst || '—'}
+                </div>
+                <div>
+                  <strong>State Name:</strong> {quote.consigneeState || quote.clientState || 'Maharashtra'}, <strong>Code:</strong> {quote.consigneeStateCode || quote.clientStateCode || '27'}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Buyer */}
           <div style={{ padding: '8px 10px' }}>
-            <div style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', color: '#555555', marginBottom: '2px' }}>
-              Buyer (Bill to)
+            <div style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', color: '#555555', marginBottom: '2px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Buyer (Bill to)</span>
+              {quote.isInternational && (
+                <span style={{ fontSize: '8px', background: '#ECFDF5', color: '#047857', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>
+                  INTERNATIONAL
+                </span>
+              )}
             </div>
             <div style={{ fontWeight: '800', fontSize: '11px' }}>
               {quote.clientName}
@@ -458,12 +473,23 @@ export default function QuoteDocument({
             <div style={{ color: '#333333', marginTop: '2px' }}>
               {quote.clientAddress}
             </div>
-            <div style={{ marginTop: '3px' }}>
-              <strong>GSTIN/UIN:</strong> {quote.clientGst || '—'}
-            </div>
-            <div>
-              <strong>State Name:</strong> {quote.clientState || 'Maharashtra'}, <strong>Code:</strong> {quote.clientStateCode || '27'}
-            </div>
+            {quote.isInternational && quote.internationalDetails?.country ? (
+              <div style={{ marginTop: '3px' }}>
+                <div><strong>Country:</strong> {quote.internationalDetails.country}</div>
+                {quote.internationalDetails.state && <div><strong>State / Province:</strong> {quote.internationalDetails.state}</div>}
+                {quote.internationalDetails.pinCode && <div><strong>Postal Code:</strong> {quote.internationalDetails.pinCode}</div>}
+                {quote.clientGst && <div><strong>Tax / VAT ID:</strong> {quote.clientGst}</div>}
+              </div>
+            ) : (
+              <>
+                <div style={{ marginTop: '3px' }}>
+                  <strong>GSTIN/UIN:</strong> {quote.clientGst || '—'}
+                </div>
+                <div>
+                  <strong>State Name:</strong> {quote.clientState || 'Maharashtra'}, <strong>Code:</strong> {quote.clientStateCode || '27'}
+                </div>
+              </>
+            )}
             {quote.clientPhone && (
               <div>
                 <strong>Phone:</strong> {quote.clientPhone}
@@ -651,7 +677,12 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</strong>
             </div>
-            {quote.taxMode === 'gst_intra' ? (
+            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                <span>Export GST (Zero-Rated under LUT):</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(0)}</span>
+              </div>
+            ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
                   <span>Central Tax (CGST 9%):</span>
@@ -710,6 +741,12 @@ export default function QuoteDocument({
                 </ol>
               </div>
             )}
+          </div>
+        )}
+
+        {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') && (
+          <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+            ★ Statutory Note: Supply meant for export under Letter of Undertaking (LUT) without payment of integrated tax (IGST).
           </div>
         )}
 
@@ -822,8 +859,15 @@ export default function QuoteDocument({
             <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>Quotation Prepared For</div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F172A' }}>{quote.clientName}</div>
             <div style={{ color: '#475569', marginTop: '4px', fontSize: '11px' }}>{quote.clientAddress}</div>
+            {quote.isInternational && quote.internationalDetails?.country ? (
+              <div style={{ marginTop: '4px', fontSize: '11px', color: '#047857', fontWeight: '600' }}>
+                <strong>Country:</strong> {quote.internationalDetails.country}
+                {quote.internationalDetails.state && ` • ${quote.internationalDetails.state}`}
+                {quote.internationalDetails.pinCode && ` (${quote.internationalDetails.pinCode})`}
+              </div>
+            ) : null}
             <div style={{ marginTop: '6px', fontSize: '11px' }}>
-              <strong>GSTIN:</strong> {quote.clientGst || '—'} &nbsp;|&nbsp; <strong>Phone:</strong> {quote.clientPhone}
+              <strong>{quote.isInternational ? 'Tax / VAT ID:' : 'GSTIN:'}</strong> {quote.clientGst || '—'} &nbsp;|&nbsp; <strong>Phone:</strong> {quote.clientPhone}
             </div>
           </div>
 
@@ -966,7 +1010,12 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            {quote.taxMode === 'gst_intra' ? (
+            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                <span>Export GST (Zero-Rated under LUT):</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(0)}</span>
+              </div>
+            ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
                   <span>Central Tax (CGST 9%):</span>
@@ -1009,6 +1058,12 @@ export default function QuoteDocument({
                 </ol>
               </div>
             )}
+          </div>
+        )}
+
+        {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') && (
+          <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+            ★ Statutory Note: Supply meant for export under Letter of Undertaking (LUT) without payment of integrated tax (IGST).
           </div>
         )}
 
@@ -1104,8 +1159,15 @@ export default function QuoteDocument({
             <div style={{ fontSize: '10px', fontWeight: '700', color: '#047857', textTransform: 'uppercase', marginBottom: '4px' }}>Customer Reference</div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#18181B' }}>{quote.clientName}</div>
             <div style={{ color: '#52525B', marginTop: '4px', fontSize: '11px' }}>{quote.clientAddress}</div>
+            {quote.isInternational && quote.internationalDetails?.country ? (
+              <div style={{ marginTop: '4px', fontSize: '11px', color: '#047857', fontWeight: '600' }}>
+                <strong>Country:</strong> {quote.internationalDetails.country}
+                {quote.internationalDetails.state && ` • ${quote.internationalDetails.state}`}
+                {quote.internationalDetails.pinCode && ` (${quote.internationalDetails.pinCode})`}
+              </div>
+            ) : null}
             <div style={{ marginTop: '6px', fontSize: '11px' }}>
-              <strong>GSTIN:</strong> {quote.clientGst || '—'} &nbsp;|&nbsp; <strong>Phone:</strong> {quote.clientPhone}
+              <strong>{quote.isInternational ? 'Tax / VAT ID:' : 'GSTIN:'}</strong> {quote.clientGst || '—'} &nbsp;|&nbsp; <strong>Phone:</strong> {quote.clientPhone}
             </div>
           </div>
 
@@ -1244,7 +1306,12 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            {quote.taxMode === 'gst_intra' ? (
+            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                <span>Export GST (Zero-Rated under LUT):</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(0)}</span>
+              </div>
+            ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
                   <span>Central Tax (CGST 9%):</span>
@@ -1287,6 +1354,12 @@ export default function QuoteDocument({
                 </ol>
               </div>
             )}
+          </div>
+        )}
+
+        {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') && (
+          <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+            ★ Statutory Note: Supply meant for export under Letter of Undertaking (LUT) without payment of integrated tax (IGST).
           </div>
         )}
 
@@ -1359,7 +1432,14 @@ export default function QuoteDocument({
         <div>
           <div><strong>To / Buyer:</strong> {quote.clientName}</div>
           <div>{quote.clientAddress}</div>
-          <div><strong>GSTIN:</strong> {quote.clientGst || '—'}</div>
+          {quote.isInternational && quote.internationalDetails?.country ? (
+            <div style={{ color: '#047857', fontWeight: '600' }}>
+              <strong>Country:</strong> {quote.internationalDetails.country}
+              {quote.internationalDetails.state && ` • ${quote.internationalDetails.state}`}
+              {quote.internationalDetails.pinCode && ` (${quote.internationalDetails.pinCode})`}
+            </div>
+          ) : null}
+          <div><strong>{quote.isInternational ? 'Tax / VAT ID:' : 'GSTIN:'}</strong> {quote.clientGst || '—'}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div><strong>Quotation No:</strong> {quote.quoteNumber}</div>
@@ -1452,7 +1532,12 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            {quote.taxMode === 'gst_intra' ? (
+            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                <span>Export GST (Zero-Rated under LUT):</span>
+                <span>{formatMoney(0)}</span>
+              </div>
+            ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
                   <span>Central Tax (CGST 9%):</span>

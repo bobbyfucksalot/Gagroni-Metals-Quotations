@@ -21,6 +21,7 @@ import {
   Clock,
   RotateCcw,
   List,
+  Globe,
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -28,6 +29,7 @@ import Toast from '@/components/Toast';
 import SignaturePad from '@/components/SignaturePad';
 import QuoteDocument from '@/components/QuoteDocument';
 import PartySearchSelect from '@/components/PartySearchSelect';
+import InternationalQuoteModal, { InternationalDetails } from '@/components/InternationalQuoteModal';
 import { Client, Product, LineItem, CompanySettings, Quote, QuoteTheme, QuoteMarketingPage, QuoteStatus } from '@/types';
 import { calculateQuoteTotals, formatINR, INDIAN_STATES, getGstStateCode, determineTaxMode, resolvePartyState, getStateFromGstin } from '@/lib/tax-engine';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
@@ -89,6 +91,9 @@ export default function EditQuotePage() {
   const [clientGst, setClientGst] = useState('');
   const [clientState, setClientState] = useState('Rajasthan');
   const [clientStateCode, setClientStateCode] = useState('08');
+  const [isInternational, setIsInternational] = useState<boolean>(false);
+  const [internationalDetails, setInternationalDetails] = useState<InternationalDetails | null>(null);
+  const [showInternationalModal, setShowInternationalModal] = useState<boolean>(false);
 
   // Consignee (Ship to)
   const [consigneeName, setConsigneeName] = useState('');
@@ -186,6 +191,11 @@ export default function EditQuotePage() {
         setConsigneeState(conState);
         setConsigneeStateCode(conCode);
 
+        if (q.isInternational) {
+          setIsInternational(true);
+          setInternationalDetails(q.internationalDetails || null);
+        }
+
         setIssueDate(q.issueDate || new Date().toISOString().split('T')[0]);
         setValidUntil(q.validUntil || new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]);
         setTaxMode(q.taxMode || 'gst_intra');
@@ -278,11 +288,15 @@ export default function EditQuotePage() {
 
   // 100% Automatic GST Engine Synchronization (Protects bank loan compliance)
   useEffect(() => {
+    if (isInternational) {
+      setTaxMode('flat');
+      return;
+    }
     const stateToUse = consigneeState || clientState || 'Rajasthan';
     const gstToUse = consigneeGst || clientGst || '';
     const autoMode = determineTaxMode(stateToUse, settings?.state || 'Rajasthan', gstToUse);
     setTaxMode(autoMode);
-  }, [consigneeState, clientState, consigneeGst, clientGst, settings?.state]);
+  }, [isInternational, consigneeState, clientState, consigneeGst, clientGst, settings?.state]);
 
   const handleCurrencyChange = async (newCurrency: string) => {
     setSelectedCurrency(newCurrency);
@@ -344,6 +358,31 @@ export default function EditQuotePage() {
     setClientAddress('');
     setClientGst('');
     showToast('Party details cleared');
+  };
+
+  const handleSaveInternationalDetails = async (details: InternationalDetails) => {
+    setInternationalDetails(details);
+    setIsInternational(true);
+    setShowInternationalModal(false);
+
+    if (details.currency && details.currency !== selectedCurrency) {
+      await handleCurrencyChange(details.currency);
+    }
+
+    if (details.taxTreatment === 'zero_rated_lut') {
+      setTaxMode('flat');
+    }
+
+    if (details.address) {
+      setClientAddress(details.address);
+    }
+    const displayLocation = details.state ? `${details.state}, ${details.country}` : details.country;
+    setClientState(displayLocation);
+    setClientStateCode('96');
+    setConsigneeState(displayLocation);
+    setConsigneeStateCode('96');
+
+    showToast(`International Quotation configured: ${details.country} (${details.currency || selectedCurrency})`);
   };
 
   const handleClientChange = (clientId: string) => {
@@ -550,7 +589,11 @@ export default function EditQuotePage() {
     showToast('Specifications formatted line-by-line!');
   };
 
-  const totals = calculateQuoteTotals(lineItems, taxMode, extraDiscountPercent, shipping);
+  const isZeroRated = Boolean(
+    isInternational &&
+    (!internationalDetails?.taxTreatment || internationalDetails.taxTreatment === 'zero_rated_lut')
+  );
+  const totals = calculateQuoteTotals(lineItems, taxMode, extraDiscountPercent, shipping, isZeroRated);
 
   const buildCorporateFields = () => {
     const obj: Record<string, any> = {
@@ -592,6 +635,8 @@ export default function EditQuotePage() {
     consigneeGst,
     consigneeState,
     consigneeStateCode,
+    isInternational,
+    internationalDetails: internationalDetails || undefined,
     status,
     statusHistory: originalQuote?.statusHistory || [],
     issueDate,
@@ -638,6 +683,8 @@ export default function EditQuotePage() {
         consigneeGst,
         consigneeState,
         consigneeStateCode,
+        isInternational,
+        internationalDetails: isInternational ? internationalDetails : null,
         currency: { base: 'INR', export: selectedCurrency, rate: currentRateAgainstINR },
         issueDate,
         validUntil,
@@ -1033,30 +1080,48 @@ export default function EditQuotePage() {
                       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
-                            State (Place of Supply) *
+                            {isInternational ? 'Destination / Place of Supply *' : 'State (Place of Supply) *'}
                           </label>
-                          <select
-                            className="qc-input"
-                            value={clientState}
-                            onChange={(e) => handleClientStateChange(e.target.value)}
-                          >
-                            {INDIAN_STATES.map((s) => (
-                              <option key={s.code} value={s.name}>
-                                {s.name} ({s.code})
-                              </option>
-                            ))}
-                          </select>
+                          {isInternational ? (
+                            <input
+                              type="text"
+                              className="qc-input"
+                              value={clientState}
+                              onChange={(e) => setClientState(e.target.value)}
+                              placeholder="Overseas City / Country"
+                            />
+                          ) : (
+                            <select
+                              className="qc-input"
+                              value={clientState}
+                              onChange={(e) => handleClientStateChange(e.target.value)}
+                            >
+                              {INDIAN_STATES.map((s) => (
+                                <option key={s.code} value={s.name}>
+                                  {s.name} ({s.code})
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>State Code</label>
-                          <input type="text" className="qc-input" value={clientStateCode} readOnly style={{ background: '#F4F4F5' }} />
+                          <input type="text" className="qc-input" value={isInternational ? (clientStateCode || '96') : clientStateCode} readOnly style={{ background: '#F4F4F5' }} />
                         </div>
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>GSTIN/UIN</label>
-                          <input type="text" className="qc-input" value={clientGst} onChange={(e) => handleClientGstChange(e.target.value)} />
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
+                            {isInternational ? 'Tax ID / VAT / TRN (Optional)' : 'GSTIN/UIN'}
+                          </label>
+                          <input
+                            type="text"
+                            className="qc-input"
+                            value={clientGst}
+                            onChange={(e) => handleClientGstChange(e.target.value)}
+                            placeholder={isInternational ? 'e.g. TRN 100234...' : 'GSTIN'}
+                          />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>Contact Phone</label>
@@ -1078,6 +1143,84 @@ export default function EditQuotePage() {
                       <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>Billing Address</label>
                         <input type="text" className="qc-input" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} />
+                      </div>
+
+                      {/* International Quotation Checkbox & Details */}
+                      <div className={`qc-international-box ${isInternational ? 'active' : ''}`}>
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            color: isInternational ? 'var(--accent-emerald)' : 'var(--text-primary)',
+                            userSelect: 'none',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isInternational}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setShowInternationalModal(true);
+                              } else {
+                                setIsInternational(false);
+                                setInternationalDetails(null);
+                                showToast('International details cleared');
+                              }
+                            }}
+                            style={{ width: '16px', height: '16px', accentColor: 'var(--accent-emerald)', cursor: 'pointer' }}
+                          />
+                          <Globe size={15} />
+                          <span>International Quotation</span>
+                        </label>
+
+                        {isInternational && internationalDetails && (
+                          <div
+                            style={{
+                              marginTop: '8px',
+                              paddingTop: '8px',
+                              borderTop: '1px solid rgba(16, 185, 129, 0.25)',
+                              fontSize: '11px',
+                              color: 'var(--text-secondary)',
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '6px',
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                              <span>
+                                <strong>Country:</strong> <span style={{ color: 'var(--accent-emerald)', fontWeight: '700' }}>{internationalDetails.country}</span>
+                              </span>
+                              {internationalDetails.state && (
+                                <span>&bull; <strong>State/Region:</strong> {internationalDetails.state}</span>
+                              )}
+                              {internationalDetails.pinCode && (
+                                <span>&bull; <strong>Postal Code:</strong> {internationalDetails.pinCode}</span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowInternationalModal(true)}
+                              style={{
+                                fontSize: '11px',
+                                color: 'var(--accent-emerald)',
+                                textDecoration: 'underline',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontWeight: '700',
+                                padding: '2px 4px',
+                              }}
+                            >
+                              Edit Details
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1114,18 +1257,30 @@ export default function EditQuotePage() {
                       </div>
 
                       <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>Consignee Destination State *</label>
-                        <select
-                          className="qc-input"
-                          value={consigneeState}
-                          onChange={(e) => handleConsigneeStateChange(e.target.value)}
-                        >
-                          {INDIAN_STATES.map((s) => (
-                            <option key={s.code} value={s.name}>
-                              {s.name} ({s.code})
-                            </option>
-                          ))}
-                        </select>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
+                          {isInternational ? 'Consignee Destination (Country / State) *' : 'Consignee Destination State *'}
+                        </label>
+                        {isInternational ? (
+                          <input
+                            type="text"
+                            className="qc-input"
+                            value={consigneeState}
+                            onChange={(e) => setConsigneeState(e.target.value)}
+                            placeholder="e.g. Dubai, UAE"
+                          />
+                        ) : (
+                          <select
+                            className="qc-input"
+                            value={consigneeState}
+                            onChange={(e) => handleConsigneeStateChange(e.target.value)}
+                          >
+                            {INDIAN_STATES.map((s) => (
+                              <option key={s.code} value={s.name}>
+                                {s.name} ({s.code})
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
 
                       <div>
@@ -1933,15 +2088,19 @@ export default function EditQuotePage() {
                         fontWeight: '700',
                         padding: '3px 9px',
                         borderRadius: '6px',
-                        background: taxMode === 'gst_intra' ? '#ECFDF5' : '#EFF6FF',
-                        color: taxMode === 'gst_intra' ? '#047857' : '#1E3A8A',
-                        border: taxMode === 'gst_intra' ? '1px solid #A7F3D0' : '1px solid #BFDBFE',
+                        background: isZeroRated ? '#ECFDF5' : (taxMode === 'gst_intra' ? '#ECFDF5' : '#EFF6FF'),
+                        color: isZeroRated ? '#047857' : (taxMode === 'gst_intra' ? '#047857' : '#1E3A8A'),
+                        border: isZeroRated ? '1px solid #A7F3D0' : (taxMode === 'gst_intra' ? '1px solid #A7F3D0' : '1px solid #BFDBFE'),
                         display: 'flex',
                         alignItems: 'center',
                         gap: '5px',
                       }}
                     >
-                      {taxMode === 'gst_intra' ? '✓ Same State (CGST 9% + SGST 9%)' : '✓ Inter-State (IGST 18%)'}
+                      {isZeroRated
+                        ? '✓ Export under LUT (0% GST - Zero Rated)'
+                        : taxMode === 'gst_intra'
+                        ? '✓ Same State (CGST 9% + SGST 9%)'
+                        : '✓ Inter-State (IGST 18%)'}
                     </div>
                   </div>
 
@@ -1993,7 +2152,12 @@ export default function EditQuotePage() {
                       <span>{formatINR(totals.taxableAmount)}</span>
                     </div>
 
-                    {taxMode === 'gst_intra' ? (
+                    {isZeroRated ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857', fontWeight: '600' }}>
+                        <span>Export Tax (under LUT / 0%):</span>
+                        <span>₹ 0.00</span>
+                      </div>
+                    ) : taxMode === 'gst_intra' ? (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857' }}>
                           <span>Central Tax (CGST 9%):</span>
@@ -2074,6 +2238,19 @@ export default function EditQuotePage() {
             </form>
           )}
         </div>
+
+        <InternationalQuoteModal
+          isOpen={showInternationalModal}
+          onClose={() => {
+            setShowInternationalModal(false);
+            if (!internationalDetails?.country) {
+              setIsInternational(false);
+            }
+          }}
+          initialDetails={internationalDetails}
+          currentCurrency={selectedCurrency}
+          onSave={handleSaveInternationalDetails}
+        />
 
         {toastMessage && <Toast message={toastMessage} />}
       </main>

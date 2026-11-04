@@ -55,17 +55,27 @@ export async function PUT(
     const body = await request.json();
     const lineItems = body.lineItems || existing.lineItems;
     const settings = await store.getSettings();
-    const effectiveTaxMode = determineTaxMode(
-      body.consigneeState || body.clientState || existing.consigneeState || existing.clientState || 'Rajasthan',
-      settings?.state || 'Rajasthan',
-      body.consigneeGst || body.clientGst || existing.consigneeGst || existing.clientGst
+    const isInternational = body.isInternational !== undefined ? body.isInternational : Boolean(existing.isInternational);
+    const effectiveTaxMode = isInternational
+      ? (body.taxMode || existing.taxMode || 'flat')
+      : determineTaxMode(
+          body.consigneeState || body.clientState || existing.consigneeState || existing.clientState || 'Rajasthan',
+          settings?.state || 'Rajasthan',
+          body.consigneeGst || body.clientGst || existing.consigneeGst || existing.clientGst
+        );
+
+    const intlDetails = body.internationalDetails !== undefined ? body.internationalDetails : existing.internationalDetails;
+    const isZeroRated = Boolean(
+      isInternational &&
+      (!intlDetails?.taxTreatment || intlDetails.taxTreatment === 'zero_rated_lut')
     );
 
     const totals = calculateQuoteTotals(
       lineItems,
       effectiveTaxMode,
       body.extraDiscountPercent !== undefined ? body.extraDiscountPercent : existing.totals.extraDiscountPercent,
-      body.shipping !== undefined ? body.shipping : existing.totals.shipping
+      body.shipping !== undefined ? body.shipping : existing.totals.shipping,
+      isZeroRated
     );
 
     // If quote was already sent or paid, create a version history snapshot
