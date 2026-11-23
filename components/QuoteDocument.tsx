@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Quote, CompanySettings, QuoteTheme } from '@/types';
-import { formatINR, numberToIndianWords } from '@/lib/tax-engine';
+import { formatINR, numberToIndianWords, describeTaxRates } from '@/lib/tax-engine';
 import { formatCurrency, numberToInternationalWords, SUPPORTED_CURRENCIES } from '@/lib/currency';
 
 interface QuoteDocumentProps {
@@ -32,6 +32,8 @@ export default function QuoteDocument({
   overrideModules,
 }: QuoteDocumentProps) {
   const currentTheme = overrideTheme || quote.theme || 'tally';
+  const effectiveCurrency = (currency && currency !== 'INR') ? currency : (quote.currency?.export || currency || 'INR');
+  const effectiveCurrencyRate = (currency && currency !== 'INR') ? (currencyRate || 1) : (quote.currency?.rate || currencyRate || 1);
 
   const modules = {
     dualSignOff: overrideModules?.dualSignOff !== undefined ? overrideModules.dualSignOff : (quote.documentModules?.dualSignOff ?? true),
@@ -41,32 +43,51 @@ export default function QuoteDocument({
     marketingPage: overrideModules?.marketingPage !== undefined ? overrideModules.marketingPage : (quote.documentModules?.marketingPage ?? true),
   };
 
-  const isExportCurrency = currency !== 'INR';
+  const isExportCurrency = effectiveCurrency !== 'INR';
 
   // Convert amounts from base INR to target currency
   const convertAmount = (inrAmount: number) => {
     if (!isExportCurrency) return inrAmount;
-    return inrAmount * currencyRate;
+    return inrAmount * effectiveCurrencyRate;
   };
 
   const formatMoney = (inrAmount: number) => {
     if (!isExportCurrency) {
       return formatINR(inrAmount);
     }
-    const converted = inrAmount * currencyRate;
-    return formatCurrency(converted, currency);
+    const converted = inrAmount * effectiveCurrencyRate;
+    return formatCurrency(converted, effectiveCurrency);
   };
+
+  // Freight + custom charges (transport, labour, ...) shown just above the grand total.
+  const taxRates = describeTaxRates(quote.lineItems || [], quote.totals.extraCharges);
+  const chargeRows = (pad: string) => (
+    <>
+      {quote.totals.shipping > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: pad }}>
+          <span>Freight / Loading:</span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.shipping)}</span>
+        </div>
+      )}
+      {(quote.totals.extraCharges || []).map((c) => (
+        <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: pad }}>
+          <span>{c.name}:</span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(c.amount)}</span>
+        </div>
+      ))}
+    </>
+  );
 
   // Converted grand total & amount in words
   const convertedGrandTotal = convertAmount(quote.totals.grandTotal);
   const displayAmountInWords = isExportCurrency
-    ? numberToInternationalWords(convertedGrandTotal, currency)
+    ? numberToInternationalWords(convertedGrandTotal, effectiveCurrency)
     : numberToIndianWords(quote.totals.grandTotal);
 
   const exchangeRateText = isExportCurrency && inrPerUnit
-    ? `Reference Exchange Rate: 1 ${currency} = ₹ ${inrPerUnit.toFixed(2)} INR`
+    ? `Reference Exchange Rate: 1 ${effectiveCurrency} = ₹ ${inrPerUnit.toFixed(2)} INR`
     : isExportCurrency
-    ? `Reference Exchange Rate: 1 ${currency} = ₹ ${(1 / currencyRate).toFixed(2)} INR`
+    ? `Reference Exchange Rate: 1 ${effectiveCurrency} = ₹ ${(1 / effectiveCurrencyRate).toFixed(2)} INR`
     : null;
 
   const showMarketingPage = modules.marketingPage !== false && !!quote.marketingPage?.enabled;
@@ -512,11 +533,11 @@ export default function QuoteDocument({
               )}
               <th style={{ padding: '6px 6px', width: '65px', textAlign: 'center', borderRight: '1px solid #000000' }}>QUANTITY</th>
               <th style={{ padding: '6px 8px', width: '95px', textAlign: 'right', borderRight: '1px solid #000000' }}>
-                RATE ({currency})
+                RATE ({effectiveCurrency})
               </th>
               <th style={{ padding: '6px 6px', width: '45px', textAlign: 'center', borderRight: '1px solid #000000' }}>PER</th>
               <th style={{ padding: '6px 8px', width: '105px', textAlign: 'right' }}>
-                AMOUNT ({currency})
+                AMOUNT ({effectiveCurrency})
               </th>
             </tr>
           </thead>
@@ -588,14 +609,14 @@ export default function QuoteDocument({
             {/* Total Row */}
             <tr className="print-row" style={{ borderTop: '1px solid #000000', borderBottom: '1px solid #000000', background: '#FAFAFA', fontWeight: '800', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
               <td colSpan={modules.thumbnails ? 4 : 3} style={{ padding: '6px 8px', textAlign: 'right', borderRight: '1px solid #000000' }}>
-                TOTAL VALUE ({currency})
+                TOTAL VALUE ({effectiveCurrency})
               </td>
               <td style={{ padding: '6px 6px', textAlign: 'center', borderRight: '1px solid #000000' }}>
                 {quote.lineItems.reduce((acc, i) => acc + i.qty, 0).toFixed(2)}
               </td>
               <td colSpan={2} style={{ borderRight: '1px solid #000000' }}></td>
               <td style={{ padding: '6px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                {formatMoney(quote.totals.grandTotal)}
+                {formatMoney(quote.totals.subtotal)}
               </td>
             </tr>
           </tbody>
@@ -677,7 +698,7 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</strong>
             </div>
-            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+            {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
                 <span>Export GST (Zero-Rated under LUT):</span>
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(0)}</span>
@@ -685,26 +706,21 @@ export default function QuoteDocument({
             ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                  <span>Central Tax (CGST 9%):</span>
+                  <span>Central Tax (CGST {taxRates.half}):</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.cgst)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                  <span>State Tax (SGST 9%):</span>
+                  <span>State Tax (SGST {taxRates.half}):</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.sgst)}</span>
                 </div>
               </>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                <span>Integrated Tax (IGST 18%):</span>
+                <span>Integrated Tax (IGST {taxRates.full}):</span>
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.totalTax)}</span>
               </div>
             )}
-            {quote.totals.shipping > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                <span>Freight / Loading:</span>
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.shipping)}</span>
-              </div>
-            )}
+            {chargeRows('2px 0')}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderTop: '1px solid #000000', marginTop: '4px', fontSize: '12px', fontWeight: '800' }}>
               <span>Total Quotation Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.grandTotal)}</span>
@@ -744,9 +760,14 @@ export default function QuoteDocument({
           </div>
         )}
 
-        {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') && (
+        {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' && (
           <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
             ★ Statutory Note: Supply meant for export under Letter of Undertaking (LUT) without payment of integrated tax (IGST).
+          </div>
+        )}
+        {quote.isInternational && quote.internationalDetails?.taxTreatment === 'concessional_0_1' && (
+          <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+            ★ Statutory Note: Supply meant for export / merchant export under concessional rate of 0.1% IGST (Notification No. 41/2017 - Integrated Tax (Rate)).
           </div>
         )}
 
@@ -848,7 +869,7 @@ export default function QuoteDocument({
               #{quote.quoteNumber}
             </div>
             <span style={{ display: 'inline-block', marginTop: '4px', padding: '2px 8px', background: '#EFF6FF', color: '#1E3A8A', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>
-              Currency: {currency}
+              Currency: {effectiveCurrency}
             </span>
           </div>
         </div>
@@ -898,9 +919,9 @@ export default function QuoteDocument({
               <th style={{ padding: '8px 10px', textAlign: 'left' }}>Item &amp; Specifications</th>
               {modules.hsnCodes && <th style={{ padding: '8px 10px', textAlign: 'center', width: '75px' }}>HSN</th>}
               <th style={{ padding: '8px 10px', textAlign: 'center', width: '60px' }}>Qty</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', width: '90px' }}>Rate ({currency})</th>
+              <th style={{ padding: '8px 10px', textAlign: 'right', width: '90px' }}>Rate ({effectiveCurrency})</th>
               <th style={{ padding: '8px 10px', textAlign: 'right', width: '60px' }}>GST</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', borderRadius: '0 6px 0 0', width: '105px' }}>Amount ({currency})</th>
+              <th style={{ padding: '8px 10px', textAlign: 'right', borderRadius: '0 6px 0 0', width: '105px' }}>Amount ({effectiveCurrency})</th>
             </tr>
           </thead>
           <tbody>
@@ -1010,7 +1031,7 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+            {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
                 <span>Export GST (Zero-Rated under LUT):</span>
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(0)}</span>
@@ -1018,20 +1039,21 @@ export default function QuoteDocument({
             ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                  <span>Central Tax (CGST 9%):</span>
+                  <span>Central Tax (CGST {taxRates.half}):</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.cgst)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                  <span>State Tax (SGST 9%):</span>
+                  <span>State Tax (SGST {taxRates.half}):</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.sgst)}</span>
                 </div>
               </>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                <span>Integrated Tax (IGST 18%):</span>
+                <span>Integrated Tax (IGST {taxRates.full}):</span>
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.totalTax)}</span>
               </div>
             )}
+            {chargeRows('3px 0')}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #1E3A8A', borderBottom: '2px solid #1E3A8A', fontSize: '15px', fontWeight: '800', color: '#1E3A8A', marginTop: '6px' }}>
               <span>Total Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.grandTotal)}</span>
@@ -1061,9 +1083,14 @@ export default function QuoteDocument({
           </div>
         )}
 
-        {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') && (
+        {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' && (
           <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
             ★ Statutory Note: Supply meant for export under Letter of Undertaking (LUT) without payment of integrated tax (IGST).
+          </div>
+        )}
+        {quote.isInternational && quote.internationalDetails?.taxTreatment === 'concessional_0_1' && (
+          <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+            ★ Statutory Note: Supply meant for export / merchant export under concessional rate of 0.1% IGST (Notification No. 41/2017 - Integrated Tax (Rate)).
           </div>
         )}
 
@@ -1148,7 +1175,7 @@ export default function QuoteDocument({
               #{quote.quoteNumber}
             </div>
             <span style={{ display: 'inline-block', marginTop: '4px', padding: '2px 8px', background: '#ECFDF5', color: '#047857', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>
-              {currency} Quote
+              {effectiveCurrency} Quote
             </span>
           </div>
         </div>
@@ -1198,9 +1225,9 @@ export default function QuoteDocument({
               <th style={{ padding: '8px 10px', textAlign: 'left' }}>Item &amp; Specifications</th>
               {modules.hsnCodes && <th style={{ padding: '8px 10px', textAlign: 'center', width: '75px' }}>HSN</th>}
               <th style={{ padding: '8px 10px', textAlign: 'center', width: '60px' }}>Qty</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', width: '90px' }}>Rate ({currency})</th>
+              <th style={{ padding: '8px 10px', textAlign: 'right', width: '90px' }}>Rate ({effectiveCurrency})</th>
               <th style={{ padding: '8px 10px', textAlign: 'right', width: '60px' }}>GST</th>
-              <th style={{ padding: '8px 10px', textAlign: 'right', borderRadius: '0 6px 0 0', width: '105px' }}>Amount ({currency})</th>
+              <th style={{ padding: '8px 10px', textAlign: 'right', borderRadius: '0 6px 0 0', width: '105px' }}>Amount ({effectiveCurrency})</th>
             </tr>
           </thead>
           <tbody>
@@ -1306,7 +1333,7 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+            {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
                 <span>Export GST (Zero-Rated under LUT):</span>
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(0)}</span>
@@ -1314,20 +1341,21 @@ export default function QuoteDocument({
             ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                  <span>Central Tax (CGST 9%):</span>
+                  <span>Central Tax (CGST {taxRates.half}):</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.cgst)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                  <span>State Tax (SGST 9%):</span>
+                  <span>State Tax (SGST {taxRates.half}):</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.sgst)}</span>
                 </div>
               </>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                <span>Integrated Tax (IGST 18%):</span>
+                <span>Integrated Tax (IGST {taxRates.full}):</span>
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.totalTax)}</span>
               </div>
             )}
+            {chargeRows('3px 0')}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #047857', borderBottom: '2px solid #047857', fontSize: '15px', fontWeight: '800', color: '#047857', marginTop: '6px' }}>
               <span>Grand Total:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatMoney(quote.totals.grandTotal)}</span>
@@ -1357,9 +1385,14 @@ export default function QuoteDocument({
           </div>
         )}
 
-        {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') && (
+        {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' && (
           <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
             ★ Statutory Note: Supply meant for export under Letter of Undertaking (LUT) without payment of integrated tax (IGST).
+          </div>
+        )}
+        {quote.isInternational && quote.internationalDetails?.taxTreatment === 'concessional_0_1' && (
+          <div style={{ padding: '6px 10px', background: '#F8FAFC', borderBottom: '1px solid #000000', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+            ★ Statutory Note: Supply meant for export / merchant export under concessional rate of 0.1% IGST (Notification No. 41/2017 - Integrated Tax (Rate)).
           </div>
         )}
 
@@ -1463,8 +1496,8 @@ export default function QuoteDocument({
             <th style={{ padding: '6px', textAlign: 'left' }}>Description</th>
             {modules.hsnCodes && <th style={{ padding: '6px', textAlign: 'center' }}>HSN</th>}
             <th style={{ padding: '6px', textAlign: 'center' }}>Qty</th>
-            <th style={{ padding: '6px', textAlign: 'right' }}>Rate ({currency})</th>
-            <th style={{ padding: '6px', textAlign: 'right' }}>Amount ({currency})</th>
+            <th style={{ padding: '6px', textAlign: 'right' }}>Rate ({effectiveCurrency})</th>
+            <th style={{ padding: '6px', textAlign: 'right' }}>Amount ({effectiveCurrency})</th>
           </tr>
         </thead>
         <tbody>
@@ -1532,7 +1565,7 @@ export default function QuoteDocument({
               <span>Taxable Value:</span>
               <span>{formatMoney(quote.totals.taxableAmount)}</span>
             </div>
-            {quote.isInternational && (!quote.internationalDetails?.taxTreatment || quote.internationalDetails.taxTreatment === 'zero_rated_lut') ? (
+            {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
                 <span>Export GST (Zero-Rated under LUT):</span>
                 <span>{formatMoney(0)}</span>
@@ -1540,20 +1573,21 @@ export default function QuoteDocument({
             ) : quote.taxMode === 'gst_intra' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                  <span>Central Tax (CGST 9%):</span>
+                  <span>Central Tax (CGST {taxRates.half}):</span>
                   <span>{formatMoney(quote.totals.cgst)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                  <span>State Tax (SGST 9%):</span>
+                  <span>State Tax (SGST {taxRates.half}):</span>
                   <span>{formatMoney(quote.totals.sgst)}</span>
                 </div>
               </>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                <span>Integrated Tax (IGST 18%):</span>
+                <span>Integrated Tax (IGST {taxRates.full}):</span>
                 <span>{formatMoney(quote.totals.totalTax)}</span>
               </div>
             )}
+            {chargeRows('2px 0')}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '2px solid #18181B', borderBottom: '2px solid #18181B', fontSize: '14px', fontWeight: '800', marginTop: '4px' }}>
               <span>Total Value:</span>
               <span>{formatMoney(quote.totals.grandTotal)}</span>
@@ -1618,6 +1652,17 @@ export default function QuoteDocument({
               </ol>
             </div>
           )}
+        </div>
+      )}
+
+      {quote.isInternational && quote.internationalDetails?.taxTreatment === 'zero_rated_lut' && (
+        <div style={{ marginTop: '10px', padding: '6px 10px', background: '#F8FAFC', border: '1px solid #18181B', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+          ★ Statutory Note: Supply meant for export under Letter of Undertaking (LUT) without payment of integrated tax (IGST).
+        </div>
+      )}
+      {quote.isInternational && quote.internationalDetails?.taxTreatment === 'concessional_0_1' && (
+        <div style={{ marginTop: '10px', padding: '6px 10px', background: '#F8FAFC', border: '1px solid #18181B', fontSize: '9px', fontStyle: 'italic', fontWeight: '600', color: '#1E293B' }}>
+          ★ Statutory Note: Supply meant for export / merchant export under concessional rate of 0.1% IGST (Notification No. 41/2017 - Integrated Tax (Rate)).
         </div>
       )}
 

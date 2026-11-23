@@ -280,55 +280,55 @@ export default function DashboardPage() {
 
         <div className="qc-content">
           {/* Welcome & Top Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-emerald)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '6px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-emerald)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>
                 Executive Overview
               </div>
-              <h1 className="font-serif-heading" style={{ fontSize: '32px', fontWeight: '700', margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              <h1 className="font-serif-heading" style={{ fontSize: '26px', fontWeight: '700', margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                 {greeting}{adminName ? `, ${adminName}` : ''}.
               </h1>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '6px 0 0' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                 Here is the commercial health and active deal flow for Gagroni Metals.
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={exportCSV} className="btn-secondary">
+              <button onClick={exportCSV} className="btn-secondary" style={{ height: '36px' }}>
                 <Download size={15} /> Export CSV
               </button>
-              <Link href="/dashboard/quotes/new" className="btn-primary" style={{ textDecoration: 'none' }}>
+              <Link href="/dashboard/quotes/new" className="btn-primary" style={{ height: '36px', textDecoration: 'none' }}>
                 <Plus size={16} /> New Quotation
               </Link>
             </div>
           </div>
 
-          {/* 4 Financial Metric Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+          {/* 4 Financial Metric Cards - 4-column balanced responsive grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Card 1: Paid Revenue */}
             <div 
               onClick={() => setActiveTab(activeTab === 'Paid' ? 'All' : 'Paid')}
               className="qc-card qc-card-hover" 
               style={{ 
-                padding: '22px', 
+                padding: '20px', 
                 cursor: 'pointer',
-                border: activeTab === 'Paid' ? '2px solid var(--accent-emerald)' : undefined,
-                background: activeTab === 'Paid' ? 'var(--accent-emerald-light)' : undefined,
+                border: activeTab === 'Paid' ? '1.5px solid var(--status-paid)' : '1px solid var(--border-color)',
+                background: activeTab === 'Paid' ? 'var(--status-paid-bg)' : 'var(--bg-surface)',
                 transition: 'all 0.2s ease',
               }}
               title="Click to view Paid quotes"
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Paid Revenue</span>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-emerald-light)', color: 'var(--accent-emerald)', display: 'grid', placeItems: 'center' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--status-paid-bg)', color: 'var(--status-paid)', display: 'grid', placeItems: 'center' }}>
                   <TrendingUp size={16} />
                 </div>
               </div>
-              <div className="tabular-nums font-serif-heading" style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              <div className="tabular-nums font-serif-heading" style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
                 {formatINR(metrics.paidRevenue)}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: 'var(--accent-emerald)', fontWeight: '700' }}>
+                <span style={{ color: 'var(--status-paid)', fontWeight: '700' }}>
                   {quotes.filter(q => q.status === 'Paid').length} quotes
                 </span> paid
               </div>
@@ -339,25 +339,25 @@ export default function DashboardPage() {
               onClick={() => setActiveTab(activeTab === 'Sent' ? 'All' : 'Sent')}
               className="qc-card qc-card-hover" 
               style={{ 
-                padding: '22px', 
+                padding: '20px', 
                 cursor: 'pointer',
-                border: activeTab === 'Sent' ? '2px solid #D97706' : undefined,
-                background: activeTab === 'Sent' ? '#FFFBEB' : undefined,
+                border: activeTab === 'Sent' ? '1.5px solid var(--status-sent)' : '1px solid var(--border-color)',
+                background: activeTab === 'Sent' ? 'var(--status-sent-bg)' : 'var(--bg-surface)',
                 transition: 'all 0.2s ease',
               }}
               title="Click to view Pending / Sent quotes"
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Pending / Sent</span>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FFFBEB', color: '#B45309', display: 'grid', placeItems: 'center' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--status-sent-bg)', color: 'var(--status-sent)', display: 'grid', placeItems: 'center' }}>
                   <Clock size={16} />
                 </div>
               </div>
-              <div className="tabular-nums font-serif-heading" style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              <div className="tabular-nums font-serif-heading" style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
                 {formatINR(metrics.pendingAmount)}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#B45309', fontWeight: '700' }}>{metrics.pendingCount} quotations</span> awaiting action
+                <span style={{ color: 'var(--status-sent)', fontWeight: '700' }}>{metrics.pendingCount} quotations</span> awaiting action
               </div>
             </div>
 
@@ -366,25 +366,25 @@ export default function DashboardPage() {
               onClick={() => setActiveTab(activeTab === 'Overdue' ? 'All' : 'Overdue')}
               className="qc-card qc-card-hover" 
               style={{ 
-                padding: '22px', 
+                padding: '20px', 
                 cursor: 'pointer',
-                border: activeTab === 'Overdue' ? '2px solid #DC2626' : undefined,
-                background: activeTab === 'Overdue' ? '#FFF5F5' : undefined,
+                border: activeTab === 'Overdue' ? '1.5px solid var(--status-overdue)' : '1px solid var(--border-color)',
+                background: activeTab === 'Overdue' ? 'var(--status-overdue-bg)' : 'var(--bg-surface)',
                 transition: 'all 0.2s ease',
               }}
               title="Click to view Overdue quotes"
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Overdue Amount</span>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FEF2F2', color: '#B91C1C', display: 'grid', placeItems: 'center' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--status-overdue-bg)', color: 'var(--status-overdue)', display: 'grid', placeItems: 'center' }}>
                   <AlertTriangle size={16} />
                 </div>
               </div>
-              <div className="tabular-nums font-serif-heading" style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              <div className="tabular-nums font-serif-heading" style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
                 {formatINR(metrics.overdueAmount)}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#B91C1C', fontWeight: '700' }}>{metrics.overdueCount} quotes</span> need follow-up
+                <span style={{ color: 'var(--status-overdue)', fontWeight: '700' }}>{metrics.overdueCount} quotes</span> need follow-up
               </div>
             </div>
 
@@ -393,21 +393,21 @@ export default function DashboardPage() {
               onClick={() => setActiveTab(activeTab === 'Accepted' ? 'All' : 'Accepted')}
               className="qc-card qc-card-hover" 
               style={{ 
-                padding: '22px', 
+                padding: '20px', 
                 cursor: 'pointer',
-                border: activeTab === 'Accepted' ? '2px solid #2563EB' : undefined,
-                background: activeTab === 'Accepted' ? '#EFF6FF' : undefined,
+                border: activeTab === 'Accepted' ? '1.5px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                background: activeTab === 'Accepted' ? 'var(--accent-emerald-light)' : 'var(--bg-surface)',
                 transition: 'all 0.2s ease',
               }}
               title="Click to view Accepted quotes"
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>Conversion Rate</span>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#EFF6FF', color: '#1E3A8A', display: 'grid', placeItems: 'center' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-emerald-light)', color: 'var(--accent-emerald)', display: 'grid', placeItems: 'center' }}>
                   <CheckCircle size={16} />
                 </div>
               </div>
-              <div className="tabular-nums font-serif-heading" style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              <div className="tabular-nums font-serif-heading" style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
                 {metrics.conversionRate}%
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -440,7 +440,7 @@ export default function DashboardPage() {
 
               {/* Tabs & Search */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', gap: '4px', background: '#F4F4F5', padding: '3px', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', gap: '4px', background: 'rgba(148, 163, 184, 0.12)', padding: '3px', borderRadius: '8px' }}>
                   {['All', 'Drafts', 'Sent', 'Accepted', 'Paid', 'Overdue'].map((tab) => {
                     const count = tab === 'Overdue' ? metrics.overdueCount : null;
                     return (
@@ -454,16 +454,16 @@ export default function DashboardPage() {
                           fontSize: '11px',
                           fontWeight: '600',
                           cursor: 'pointer',
-                          background: activeTab === tab ? '#FFFFFF' : 'transparent',
+                          background: activeTab === tab ? 'var(--bg-surface)' : 'transparent',
                           color: activeTab === tab 
-                            ? (tab === 'Overdue' ? '#DC2626' : 'var(--text-primary)') 
-                            : (tab === 'Overdue' && (count || 0) > 0 ? '#DC2626' : 'var(--text-secondary)'),
-                          boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            ? (tab === 'Overdue' ? 'var(--status-overdue)' : 'var(--text-primary)') 
+                            : (tab === 'Overdue' && (count || 0) > 0 ? 'var(--status-overdue)' : 'var(--text-secondary)'),
+                          boxShadow: activeTab === tab ? 'var(--shadow-card)' : 'none',
                         }}
                       >
                         {tab}
                         {count !== null && count > 0 && (
-                          <span style={{ marginLeft: '4px', background: '#FEE2E2', color: '#DC2626', padding: '1px 5px', borderRadius: '8px', fontSize: '10px' }}>
+                          <span style={{ marginLeft: '4px', background: 'var(--status-overdue-bg)', color: 'var(--status-overdue)', padding: '1px 5px', borderRadius: '8px', fontSize: '10px' }}>
                             {count}
                           </span>
                         )}
@@ -510,7 +510,7 @@ export default function DashboardPage() {
                           </td>
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#F4F4F5', fontSize: '10px', fontWeight: '700', color: '#52525B', display: 'grid', placeItems: 'center' }}>
+                              <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'rgba(148, 163, 184, 0.15)', fontSize: '10px', fontWeight: '700', color: 'var(--text-primary)', display: 'grid', placeItems: 'center' }}>
                                 {q.clientName.substring(0, 2).toUpperCase()}
                               </div>
                               <div>
@@ -553,10 +553,12 @@ export default function DashboardPage() {
                                     right: '10px',
                                     top: isLastRows ? 'auto' : '35px',
                                     bottom: isLastRows ? '35px' : 'auto',
-                                    background: '#FFFFFF',
+                                    background: 'var(--bg-popover)',
+                                    backdropFilter: 'var(--glass-blur)',
+                                    WebkitBackdropFilter: 'var(--glass-blur)',
                                     border: '1px solid var(--border-color)',
-                                    borderRadius: '8px',
-                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                    borderRadius: '10px',
+                                    boxShadow: 'var(--shadow-dropdown)',
                                     zIndex: 100,
                                     width: '145px',
                                     padding: '5px',
@@ -576,7 +578,7 @@ export default function DashboardPage() {
                                   <Link
                                     href={`/dashboard/quotes/${q.id}/edit`}
                                     className="qc-nav-item"
-                                    style={{ height: '32px', fontSize: '12px', padding: '0 8px', color: '#2563EB', fontWeight: '600' }}
+                                    style={{ height: '32px', fontSize: '12px', padding: '0 8px', color: 'var(--accent-emerald)', fontWeight: '600' }}
                                   >
                                     <Edit3 size={13} /> Edit Quotation
                                   </Link>
@@ -596,7 +598,7 @@ export default function DashboardPage() {
                                       setSelectedRowMenu(null);
                                     }}
                                     className="qc-nav-item"
-                                    style={{ height: '32px', fontSize: '12px', padding: '0 8px', border: 'none', width: '100%', cursor: 'pointer', color: '#B91C1C' }}
+                                    style={{ height: '32px', fontSize: '12px', padding: '0 8px', border: 'none', width: '100%', cursor: 'pointer', color: 'var(--status-overdue)' }}
                                   >
                                     <Trash2 size={13} /> Delete
                                   </button>
@@ -638,30 +640,30 @@ export default function DashboardPage() {
                 <div style={{ height: '190px', width: '100%' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E4E7" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#71717A' }} axisLine={false} tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
                       <YAxis
-                        tick={{ fontSize: 10, fill: '#71717A' }}
+                        tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
                         axisLine={false}
                         tickLine={false}
                         tickFormatter={(val) => (val >= 100000 ? `₹${(val / 100000).toFixed(val % 100000 === 0 ? 0 : 1)}L` : val > 0 ? `₹${(val / 1000).toFixed(0)}k` : '₹0')}
                       />
                       <Tooltip
                         formatter={(value: any, name: any) => [formatINR(Number(value) || 0), name === 'Paid' ? 'Paid Revenue' : 'Pending Pipeline']}
-                        contentStyle={{ background: '#18181B', color: '#FFFFFF', borderRadius: '8px', fontSize: '12px', border: 'none' }}
+                        contentStyle={{ background: 'var(--bg-popover)', color: 'var(--text-primary)', borderRadius: '10px', fontSize: '12px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-dropdown)' }}
                       />
-                      <Bar dataKey="paid" name="Paid" fill="#047857" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="pending" name="Pending" fill="#A7F3D0" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="paid" name="Paid" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="pending" name="Pending" fill="#93C5FD" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
 
                 <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '12px', justifyContent: 'center' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <i style={{ width: '8px', height: '8px', background: '#047857', borderRadius: '2px', display: 'inline-block' }} /> Paid Revenue
+                    <i style={{ width: '8px', height: '8px', background: '#2563EB', borderRadius: '2px', display: 'inline-block' }} /> Paid Revenue
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <i style={{ width: '8px', height: '8px', background: '#A7F3D0', borderRadius: '2px', display: 'inline-block' }} /> Pending Pipeline
+                    <i style={{ width: '8px', height: '8px', background: '#93C5FD', borderRadius: '2px', display: 'inline-block' }} /> Pending Pipeline
                   </span>
                 </div>
               </div>
@@ -680,7 +682,7 @@ export default function DashboardPage() {
                       borderRadius: '8px',
                       textDecoration: 'none',
                       color: 'var(--text-primary)',
-                      background: '#FAFAF9',
+                      background: 'var(--bg-surface)',
                       transition: 'all 150ms ease',
                     }}
                     className="qc-card-hover"
@@ -699,12 +701,12 @@ export default function DashboardPage() {
                       borderRadius: '8px',
                       textDecoration: 'none',
                       color: 'var(--text-primary)',
-                      background: '#FAFAF9',
+                      background: 'var(--bg-surface)',
                     }}
                     className="qc-card-hover"
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700' }}>
-                      <Building size={14} style={{ color: '#1E3A8A' }} /> Add Client
+                      <Building size={14} style={{ color: 'var(--accent-emerald)' }} /> Add Client
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px' }}>Manage directory</div>
                   </Link>
@@ -717,12 +719,12 @@ export default function DashboardPage() {
                       borderRadius: '8px',
                       textDecoration: 'none',
                       color: 'var(--text-primary)',
-                      background: '#FAFAF9',
+                      background: 'var(--bg-surface)',
                     }}
                     className="qc-card-hover"
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700' }}>
-                      <Layers size={14} style={{ color: '#B45309' }} /> Metal Catalog
+                      <Layers size={14} style={{ color: 'var(--status-sent)' }} /> Metal Catalog
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px' }}>SS, MS, Brass rates</div>
                   </Link>
@@ -735,12 +737,12 @@ export default function DashboardPage() {
                       borderRadius: '8px',
                       textDecoration: 'none',
                       color: 'var(--text-primary)',
-                      background: '#FAFAF9',
+                      background: 'var(--bg-surface)',
                     }}
                     className="qc-card-hover"
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700' }}>
-                      <Share2 size={14} style={{ color: '#71717A' }} /> Company Branding
+                      <Share2 size={14} style={{ color: 'var(--text-muted)' }} /> Company Branding
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px' }}>Logo & Bank IFSC</div>
                   </Link>

@@ -104,7 +104,7 @@ export async function POST(request: Request) {
 
     const isZeroRated = Boolean(
       body.isInternational &&
-      (!body.internationalDetails?.taxTreatment || body.internationalDetails.taxTreatment === 'zero_rated_lut')
+      (body.internationalDetails?.taxTreatment === 'zero_rated_lut' || (!body.internationalDetails?.taxTreatment && lineItems.every((it: { taxRate?: number }) => !it.taxRate || it.taxRate === 0)))
     );
 
     // Compute verified totals server-side with automatic taxMode
@@ -113,13 +113,15 @@ export async function POST(request: Request) {
       effectiveTaxMode,
       body.extraDiscountPercent || 0,
       body.shipping || 0,
-      isZeroRated
+      isZeroRated,
+      body.extraCharges || []
     );
 
     const now = new Date().toISOString();
 
     const newQuote = await store.createQuote({
       ...body,
+      quoteNumber: undefined,
       title,
       clientId: clientId || `cli-temp-${Date.now()}`,
       clientName,

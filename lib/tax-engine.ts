@@ -1,4 +1,4 @@
-import { LineItem, QuoteTotals } from '@/types';
+import { ExtraCharge, LineItem, QuoteTotals } from '@/types';
 
 /**
  * Convert number to words in Indian numbering system (Lakh, Crore, Thousand, Hundred)
@@ -96,6 +96,28 @@ export function formatINR(amount: number, decimals: boolean = false): string {
   return formatter.format(amount);
 }
 
+/** GST applied on custom charges (transport, labour, ...). */
+export const EXTRA_CHARGE_GST_RATE = 18;
+
+/**
+ * Rate labels for CGST/SGST/IGST lines, derived from the actual line items (e.g. 18%, or 0.1% for
+ * international supplies). Falls back to "mixed" when items carry different rates.
+ */
+export function describeTaxRates(
+  items: { taxRate?: number }[],
+  extraCharges?: ExtraCharge[],
+  isZeroRated: boolean = false
+): { full: string; half: string } {
+  const isConcessional = items.length > 0 && items.every((i) => i.taxRate === 0.1);
+  const extraRate = isZeroRated ? 0 : (isConcessional ? 0.1 : EXTRA_CHARGE_GST_RATE);
+  const rates = new Set<number>(items.map((i) => (typeof i.taxRate === 'number' ? i.taxRate : 18)));
+  if (!isZeroRated && (extraCharges || []).some((c) => c.name && c.amount > 0)) rates.add(extraRate);
+  if (rates.size !== 1) return { full: 'mixed rates', half: 'mixed rates' };
+  const r = [...rates][0];
+  const fmt = (n: number) => `${Number(n.toFixed(3))}%`;
+  return { full: fmt(r), half: fmt(r / 2) };
+}
+
 /**
  * Compute line items total and aggregate quote financial figures
  */
@@ -104,7 +126,8 @@ export function calculateQuoteTotals(
   taxMode: 'gst_intra' | 'gst_inter' | 'flat' = 'gst_intra',
   extraDiscountPercent: number = 0,
   shipping: number = 0,
-  isZeroRated: boolean = false
+  isZeroRated: boolean = false,
+  extraCharges: ExtraCharge[] = []
 ): QuoteTotals {
   let subtotal = 0;
   let itemDiscountTotal = 0;
@@ -139,9 +162,24 @@ export function calculateQuoteTotals(
   const taxableAmount = Math.max(0, baseTaxable - extraDiscountAmount);
 
   // If extra discount was applied, scale the total tax proportionally
-  const effectiveTax = isZeroRated
+  const itemsEffectiveTax = isZeroRated
     ? 0
     : (baseTaxable > 0 ? (taxableAmount / baseTaxable) * totalTax : 0);
+
+  // Custom charges (transport, labour, ...) carry GST at EXTRA_CHARGE_GST_RATE (zero for LUT exports).
+  const cleanCharges: ExtraCharge[] = (extraCharges || [])
+    .map((c) => ({ id: c.id, name: String(c.name || '').trim(), amount: Number(c.amount) || 0 }))
+    .filter((c) => c.name && c.amount > 0);
+  const extraChargesTotal = cleanCharges.reduce((sum, c) => sum + c.amount, 0);
+
+  const appliedExtraChargeRate = isZeroRated
+    ? 0
+    : items.length > 0 && items.every((i) => i.taxRate === 0.1)
+    ? 0.1
+    : EXTRA_CHARGE_GST_RATE;
+
+  const extraChargesTax = (extraChargesTotal * appliedExtraChargeRate) / 100;
+  const effectiveTax = itemsEffectiveTax + extraChargesTax;
 
   if (isZeroRated) {
     cgst = 0;
@@ -162,7 +200,7 @@ export function calculateQuoteTotals(
     igst = effectiveTax;
   }
 
-  const grandTotal = Math.round(taxableAmount + effectiveTax + (shipping || 0));
+  const grandTotal = Math.round(taxableAmount + effectiveTax + (shipping || 0) + extraChargesTotal);
   const amountInWords = numberToIndianWords(grandTotal);
 
   return {
@@ -176,6 +214,9 @@ export function calculateQuoteTotals(
     igst: Math.round(igst * 100) / 100,
     totalTax: Math.round(effectiveTax * 100) / 100,
     shipping: shipping || 0,
+    extraCharges: cleanCharges,
+    extraChargesTotal: Math.round(extraChargesTotal * 100) / 100,
+    extraChargesTax: Math.round(extraChargesTax * 100) / 100,
     grandTotal,
     amountInWords,
   };
@@ -426,8 +467,12 @@ export function resolvePartyState(party?: {
 
 export function getGstStateCode(stateName: string): string {
   if (!stateName) return '08';
-  const matched = getStateByName(stateName) || getStateByCode(stateName);
-  return matched ? matched.code : '08';
+  const clean = stateName.trim();
+  if (/^\d{2}$/.test(clean)) return clean;
+  const matched = getStateByName(clean) || getStateByCode(clean);
+  if (matched) return matched.code;
+  if (clean.toLowerCase().includes('rajasthan')) return '08';
+  return '96';
 }
 
 export function determineTaxMode(

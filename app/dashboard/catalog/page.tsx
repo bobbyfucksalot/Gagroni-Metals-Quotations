@@ -723,12 +723,13 @@ export default function CatalogPage() {
                       <select
                         className="qc-input"
                         value={formData.defaultGstRate}
-                        onChange={(e) => setFormData({ ...formData, defaultGstRate: Number(e.target.value) || 18 })}
+                        onChange={(e) => setFormData({ ...formData, defaultGstRate: Number(e.target.value) })}
                       >
                         <option value={18}>18% GST</option>
                         <option value={12}>12% GST</option>
                         <option value={28}>28% GST</option>
                         <option value={5}>5% GST</option>
+                        <option value={0.1}>0.1% GST (International)</option>
                         <option value={0}>0%</option>
                       </select>
                     </div>

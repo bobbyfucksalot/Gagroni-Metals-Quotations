@@ -9,7 +9,7 @@ export interface InternationalDetails {
   pinCode?: string;
   address?: string;
   currency?: string;
-  taxTreatment?: 'zero_rated_lut' | 'taxable_igst';
+  taxTreatment?: 'zero_rated_lut' | 'taxable_igst' | 'concessional_0_1';
 }
 
 interface InternationalQuoteModalProps {
@@ -65,7 +65,7 @@ export default function InternationalQuoteModal({
   const [pinCode, setPinCode] = useState('');
   const [address, setAddress] = useState('');
   const [currency, setCurrency] = useState('USD');
-  const [taxTreatment, setTaxTreatment] = useState<'zero_rated_lut' | 'taxable_igst'>('zero_rated_lut');
+  const [taxTreatment, setTaxTreatment] = useState<'zero_rated_lut' | 'taxable_igst' | 'concessional_0_1'>('concessional_0_1');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function InternationalQuoteModal({
       setPinCode(initialDetails?.pinCode || '');
       setAddress(initialDetails?.address || '');
       setCurrency(initialDetails?.currency || currentCurrency || 'USD');
-      setTaxTreatment(initialDetails?.taxTreatment || 'zero_rated_lut');
+      setTaxTreatment(initialDetails?.taxTreatment || 'concessional_0_1');
       setError('');
     }
   }, [isOpen, initialDetails, currentCurrency]);
@@ -295,8 +295,9 @@ export default function InternationalQuoteModal({
                 onChange={(e) => setTaxTreatment(e.target.value as any)}
                 style={{ fontWeight: '600' }}
               >
+                <option value="concessional_0_1">0.1% IGST (Merchant Export / Concessional)</option>
                 <option value="zero_rated_lut">Zero-Rated (0% GST under LUT)</option>
-                <option value="taxable_igst">Export with IGST (Taxable)</option>
+                <option value="taxable_igst">Export with Regular IGST (Taxable)</option>
               </select>
             </div>
           </div>

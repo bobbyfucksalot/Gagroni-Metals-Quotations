@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       description: description || '',
       mrp: Number(mrp) || 0,
       offerPrice: Number(offerPrice) || Number(mrp) || 0,
-      defaultGstRate: Number(defaultGstRate) || 18,
+      defaultGstRate: Number.isFinite(Number(defaultGstRate)) && defaultGstRate !== '' && defaultGstRate != null ? Number(defaultGstRate) : 18,
       unit: unit || 'pcs',
       stockQty: Number(stockQty) || 0,
       hsnCode: hsnCode || '730890',

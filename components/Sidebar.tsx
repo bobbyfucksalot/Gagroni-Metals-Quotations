@@ -107,11 +107,22 @@ export default function Sidebar() {
     .toUpperCase() || 'AD';
 
   return (
-    <aside className="qc-sidebar">
+    <aside className="qc-sidebar" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Soft ambient glow behind brand */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: '0 0 auto 0',
+          height: '180px',
+          background: 'linear-gradient(to bottom, rgba(37, 99, 235, 0.12), rgba(99, 102, 241, 0.05), transparent)',
+          pointerEvents: 'none',
+        }}
+      />
+
       {/* Brand Section */}
-      <div style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
+      <div style={{ position: 'relative', marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <div style={{ position: 'relative', width: '38px', height: '38px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+          <div style={{ position: 'relative', width: '38px', height: '38px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: '#FFFFFF', padding: '2px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
             <Image
               src="/gagroni-metals-logo.png"
               alt="Gagroni Metals"
@@ -123,19 +134,19 @@ export default function Sidebar() {
           </div>
           <div>
             <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1.25 }}>
-              Gagroni Metals <span style={{ color: 'var(--accent-emerald)', fontSize: '10px', fontWeight: '800', background: 'var(--accent-emerald-light)', padding: '2px 6px', borderRadius: '4px', display: 'inline-block' }}>QUOTATION MAKER</span>
+              Gagroni Metals <span style={{ color: '#FFFFFF', fontSize: '9px', fontWeight: '800', background: 'linear-gradient(180deg, #4F8DF7 0%, #2563EB 100%)', padding: '2px 5px', borderRadius: '4px', display: 'inline-block' }}>QUOTES</span>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>Enterprise Commercial Suite</div>
           </div>
         </Link>
       </div>
 
-      {/* Main Navigation */}
-      <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', paddingLeft: '8px' }}>
+      {/* Main Navigation with internal scroll */}
+      <div style={{ position: 'relative', fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', paddingLeft: '8px', flexShrink: 0 }}>
         Sales Suite
       </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+      <nav style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
         {navItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -145,13 +156,29 @@ export default function Sidebar() {
               href={item.href}
               className={`qc-nav-item ${isActive ? 'active' : ''}`}
             >
-              <Icon size={18} style={{ color: isActive ? 'var(--accent-emerald)' : 'var(--text-secondary)' }} />
-              <span>{item.name}</span>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isActive ? 'linear-gradient(180deg, #4F8DF7 0%, #2563EB 100%)' : 'rgba(148, 163, 184, 0.12)',
+                  color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                  boxShadow: isActive ? '0 4px 12px -2px rgba(37, 99, 235, 0.5)' : 'none',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Icon size={16} />
+              </div>
+              <span style={{ fontWeight: isActive ? '600' : '500' }}>{item.name}</span>
             </Link>
           );
         })}
 
-        <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '16px', marginBottom: '8px', paddingLeft: '8px' }}>
+        <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '14px', marginBottom: '8px', paddingLeft: '8px', flexShrink: 0 }}>
           Insights & System
         </div>
 
@@ -164,39 +191,52 @@ export default function Sidebar() {
               href={item.href}
               className={`qc-nav-item ${isActive ? 'active' : ''}`}
             >
-              <Icon size={18} style={{ color: isActive ? 'var(--accent-emerald)' : 'var(--text-secondary)' }} />
-              <span>{item.name}</span>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isActive ? 'linear-gradient(180deg, #4F8DF7 0%, #2563EB 100%)' : 'rgba(148, 163, 184, 0.12)',
+                  color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                  boxShadow: isActive ? '0 4px 12px -2px rgba(37, 99, 235, 0.5)' : 'none',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Icon size={16} />
+              </div>
+              <span style={{ fontWeight: isActive ? '600' : '500' }}>{item.name}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Bottom Section: User Profile */}
-      <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+      <div style={{ position: 'relative', marginTop: 'auto', paddingTop: '12px', flexShrink: 0 }}>
         {/* Install Desktop App Button */}
         {installPrompt && !isStandalone && (
           <button
             type="button"
             onClick={handleInstallApp}
+            className="btn-primary"
             style={{
               width: '100%',
               marginBottom: '10px',
               padding: '8px 12px',
-              background: '#047857',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '11.5px',
+              height: '34px',
+              fontSize: '11px',
               fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
-              boxShadow: '0 2px 6px rgba(4, 120, 87, 0.25)',
             }}
           >
-            <Download size={14} /> Install Desktop App
+            <Download size={13} /> Install Desktop App
           </button>
         )}
 
@@ -204,14 +244,17 @@ export default function Sidebar() {
         <ThemeToggle variant="sidebar" />
 
         {/* User Card */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px', boxShadow: 'var(--shadow-card)', marginTop: '8px' }}>
           <Link
             href="/dashboard/settings?tab=profile"
             style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', flex: 1, minWidth: 0 }}
             title="Edit Admin Profile & Password"
           >
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-emerald-light)', color: 'var(--accent-emerald)', display: 'grid', placeItems: 'center', fontWeight: '700', fontSize: '12px', flexShrink: 0 }}>
-              {initials}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #2563EB, #4F8DF7)', color: '#FFFFFF', display: 'grid', placeItems: 'center', fontWeight: '700', fontSize: '11px' }}>
+                {initials}
+              </div>
+              <span style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', border: '2px solid var(--bg-surface)' }} />
             </div>
             <div style={{ minWidth: 0, overflow: 'hidden' }}>
               <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
@@ -224,8 +267,8 @@ export default function Sidebar() {
           <button
             onClick={handleLogout}
             title="Logout"
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'grid', placeItems: 'center', flexShrink: 0 }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#B91C1C')}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'grid', placeItems: 'center', flexShrink: 0, transition: 'color 0.15s ease' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
             <LogOut size={16} />

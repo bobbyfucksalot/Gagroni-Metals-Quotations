@@ -106,11 +106,12 @@ export default function QuotesListPage() {
       // The list omits image blobs, so duplicate from the full document.
       const full = await fetch(`/api/quotes/${quote.id}`).then((r) => r.json());
       const source: Quote = full.quote || quote;
+      const { id: _ignoredId, _id: _ignoredDbId, quoteNumber: _ignoredNum, createdAt: _cAt, updatedAt: _uAt, ...cleanSource } = source as any;
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...source,
+          ...cleanSource,
           title: `${quote.title} (Copy)`,
           status: 'Draft',
         }),

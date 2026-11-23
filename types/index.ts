@@ -69,6 +69,12 @@ export interface QuoteDocumentModules {
   marketingPage?: boolean;
 }
 
+export interface ExtraCharge {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 export interface QuoteTotals {
   subtotal: number;
   itemDiscountTotal: number;
@@ -80,6 +86,9 @@ export interface QuoteTotals {
   igst: number;
   totalTax: number;
   shipping: number;
+  extraCharges?: ExtraCharge[];
+  extraChargesTotal?: number;
+  extraChargesTax?: number;
   grandTotal: number;
   amountInWords: string;
 }
@@ -126,7 +135,7 @@ export interface Quote {
     pinCode?: string;
     address?: string;
     currency?: string;
-    taxTreatment?: 'zero_rated_lut' | 'taxable_igst';
+    taxTreatment?: 'zero_rated_lut' | 'taxable_igst' | 'concessional_0_1';
   };
   status: QuoteStatus;
   statusHistory: StatusChangeEvent[];

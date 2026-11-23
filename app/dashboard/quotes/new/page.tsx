@@ -26,10 +26,11 @@ import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import SignaturePad from '@/components/SignaturePad';
 import QuoteDocument from '@/components/QuoteDocument';
+import ExtraChargesEditor from '@/components/ExtraChargesEditor';
 import PartySearchSelect from '@/components/PartySearchSelect';
 import InternationalQuoteModal, { InternationalDetails } from '@/components/InternationalQuoteModal';
-import { Client, Product, LineItem, CompanySettings, Quote, QuoteTheme, QuoteMarketingPage } from '@/types';
-import { calculateQuoteTotals, formatINR, INDIAN_STATES, getGstStateCode, determineTaxMode, resolvePartyState, getStateFromGstin } from '@/lib/tax-engine';
+import { ExtraCharge, Client, Product, LineItem, CompanySettings, Quote, QuoteTheme, QuoteMarketingPage } from '@/types';
+import { describeTaxRates, calculateQuoteTotals, formatINR, INDIAN_STATES, getGstStateCode, determineTaxMode, resolvePartyState, getStateFromGstin } from '@/lib/tax-engine';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
 
 export default function NewQuotePage() {
@@ -182,6 +183,7 @@ export default function NewQuotePage() {
 
   const [extraDiscountPercent, setExtraDiscountPercent] = useState<number>(0);
   const [shipping, setShipping] = useState<number>(0);
+  const [extraCharges, setExtraCharges] = useState<ExtraCharge[]>([]);
   const [notes, setNotes] = useState('Prices are valid for 15 days due to alloy market price fluctuations.');
   const [signatureData, setSignatureData] = useState<string>('');
 
@@ -247,7 +249,7 @@ export default function NewQuotePage() {
                 unit: selectedProduct.unit || 'pcs',
                 mrp: mrp,
                 unitPrice: offerPrice,
-                taxRate: selectedProduct.defaultGstRate || 18,
+                taxRate: selectedProduct.defaultGstRate ?? 18,
                 discountPercent: discPercent,
                 discountAmount: discAmount,
                 total: offerPrice,
@@ -276,7 +278,7 @@ export default function NewQuotePage() {
               unit: p.unit || 'pcs',
               mrp: mrp,
               unitPrice: offerPrice,
-              taxRate: p.defaultGstRate || 18,
+              taxRate: p.defaultGstRate ?? 18,
               discountPercent: discPercent,
               discountAmount: discAmount,
               total: offerPrice,
@@ -411,8 +413,12 @@ export default function NewQuotePage() {
       await handleCurrencyChange(details.currency);
     }
 
+    setTaxMode('flat');
+
     if (details.taxTreatment === 'zero_rated_lut') {
-      setTaxMode('flat');
+      setLineItems((prev) => prev.map((item) => ({ ...item, taxRate: 0 })));
+    } else if (details.taxTreatment === 'concessional_0_1') {
+      setLineItems((prev) => prev.map((item) => ({ ...item, taxRate: 0.1 })));
     }
 
     if (details.address) {
@@ -498,7 +504,9 @@ export default function NewQuotePage() {
       unit: product?.unit || 'pcs',
       mrp: mrp,
       unitPrice: offerPrice,
-      taxRate: product?.defaultGstRate || 18,
+      taxRate: isInternational
+        ? (internationalDetails?.taxTreatment === 'zero_rated_lut' ? 0 : internationalDetails?.taxTreatment === 'concessional_0_1' ? 0.1 : (product?.defaultGstRate ?? 18))
+        : (product?.defaultGstRate ?? 18),
       discountPercent: discountPercent,
       discountAmount: discountAmount,
       total: offerPrice,
@@ -614,9 +622,10 @@ export default function NewQuotePage() {
 
   const isZeroRated = Boolean(
     isInternational &&
-    (!internationalDetails?.taxTreatment || internationalDetails.taxTreatment === 'zero_rated_lut')
+    (internationalDetails?.taxTreatment === 'zero_rated_lut' || (!internationalDetails?.taxTreatment && lineItems.every((it) => !it.taxRate || it.taxRate === 0)))
   );
-  const totals = calculateQuoteTotals(lineItems, taxMode, extraDiscountPercent, shipping, isZeroRated);
+  const totals = calculateQuoteTotals(lineItems, taxMode, extraDiscountPercent, shipping, isZeroRated, extraCharges);
+  const taxRates = describeTaxRates(lineItems, extraCharges, isZeroRated);
 
   const buildCorporateFields = () => {
     const obj: Record<string, any> = {
@@ -720,6 +729,7 @@ export default function NewQuotePage() {
           documentModules,
           extraDiscountPercent,
           shipping,
+          extraCharges,
           notes: customerGreeting,
           terms: termsClauses.filter(Boolean).join('\n'),
           theme,
@@ -1616,12 +1626,13 @@ export default function NewQuotePage() {
                           <select
                             className="qc-input"
                             value={item.taxRate}
-                            onChange={(e) => handleUpdateItem(index, { taxRate: Number(e.target.value) || 18 })}
+                            onChange={(e) => handleUpdateItem(index, { taxRate: Number(e.target.value) })}
                           >
                             <option value={18}>18% GST</option>
                             <option value={12}>12% GST</option>
                             <option value={28}>28% GST</option>
                             <option value={5}>5% GST</option>
+                            <option value={0.1}>0.1% GST (International)</option>
                             <option value={0}>0%</option>
                           </select>
                         </div>
@@ -2065,8 +2076,8 @@ export default function NewQuotePage() {
                       {isZeroRated
                         ? '✓ Export under LUT (0% GST - Zero Rated)'
                         : taxMode === 'gst_intra'
-                        ? '✓ Same State (CGST 9% + SGST 9%)'
-                        : '✓ Inter-State (IGST 18%)'}
+                        ? `✓ Same State (CGST ${taxRates.half} + SGST ${taxRates.half})`
+                        : `✓ Inter-State (IGST ${taxRates.full})`}
                     </div>
                   </div>
 
@@ -2081,6 +2092,10 @@ export default function NewQuotePage() {
                         <span>-{formatINR(totals.itemDiscountTotal)}</span>
                       </div>
                     )}
+                    <div style={{ padding: '6px 0', borderBottom: '1px dashed var(--border-subtle)' }}>
+                      <ExtraChargesEditor charges={extraCharges} onChange={setExtraCharges} />
+                    </div>
+
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Taxable Amount:</span>
                       <span>{formatINR(totals.taxableAmount)}</span>
@@ -2094,17 +2109,17 @@ export default function NewQuotePage() {
                     ) : taxMode === 'gst_intra' ? (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857' }}>
-                          <span>Central Tax (CGST 9%):</span>
+                          <span>Central Tax (CGST {taxRates.half}):</span>
                           <span>{formatINR(totals.cgst)}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857' }}>
-                          <span>State Tax (SGST 9%):</span>
+                          <span>State Tax (SGST {taxRates.half}):</span>
                           <span>{formatINR(totals.sgst)}</span>
                         </div>
                       </>
                     ) : (
                       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1E3A8A' }}>
-                        <span>Integrated Tax (IGST 18%):</span>
+                        <span>Integrated Tax (IGST {taxRates.full}):</span>
                         <span>{formatINR(totals.igst)}</span>
                       </div>
                     )}
@@ -2133,8 +2148,8 @@ export default function NewQuotePage() {
                         <div>
                           <strong style={{ color: taxMode === 'gst_intra' ? '#065F46' : '#1E40AF' }}>
                             {taxMode === 'gst_intra'
-                              ? 'Automatic Intra-State GST (CGST 9% + SGST 9%)'
-                              : 'Automatic Inter-State GST (IGST 18%)'}
+                              ? `Automatic Intra-State GST (CGST ${taxRates.half} + SGST ${taxRates.half})`
+                              : `Automatic Inter-State GST (IGST ${taxRates.full})`}
                           </strong>
                           <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '1px' }}>
                             POS: {consigneeState || clientState || 'Rajasthan'} (Code {consigneeStateCode || clientStateCode || '08'})

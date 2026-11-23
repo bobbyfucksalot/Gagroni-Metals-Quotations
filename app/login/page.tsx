@@ -158,9 +158,9 @@ export default function LoginPage() {
       </div>
 
       {/* Brand Header */}
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ position: 'relative', width: '46px', height: '46px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <div style={{ position: 'relative', width: '46px', height: '46px', borderRadius: '14px', overflow: 'hidden', background: '#FFFFFF', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <Image
               src="/gagroni-metals-logo.png"
               alt="Gagroni Metals"
@@ -172,7 +172,7 @@ export default function LoginPage() {
           </div>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              Gagroni Metals <span style={{ color: 'var(--accent-emerald)', fontSize: '11px', background: 'var(--accent-emerald-light)', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>QUOTATION MAKER</span>
+              Gagroni Metals <span style={{ color: '#FFFFFF', fontSize: '10.5px', background: 'linear-gradient(180deg, #4F8DF7 0%, #2563EB 100%)', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>QUOTES</span>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Enterprise Workspace</div>
           </div>

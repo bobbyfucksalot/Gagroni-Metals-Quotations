@@ -67,7 +67,7 @@ export async function PUT(
     const intlDetails = body.internationalDetails !== undefined ? body.internationalDetails : existing.internationalDetails;
     const isZeroRated = Boolean(
       isInternational &&
-      (!intlDetails?.taxTreatment || intlDetails.taxTreatment === 'zero_rated_lut')
+      (intlDetails?.taxTreatment === 'zero_rated_lut' || (!intlDetails?.taxTreatment && lineItems.every((it: { taxRate?: number }) => !it.taxRate || it.taxRate === 0)))
     );
 
     const totals = calculateQuoteTotals(
@@ -75,7 +75,8 @@ export async function PUT(
       effectiveTaxMode,
       body.extraDiscountPercent !== undefined ? body.extraDiscountPercent : existing.totals.extraDiscountPercent,
       body.shipping !== undefined ? body.shipping : existing.totals.shipping,
-      isZeroRated
+      isZeroRated,
+      body.extraCharges !== undefined ? body.extraCharges : (existing.totals.extraCharges || [])
     );
 
     // If quote was already sent or paid, create a version history snapshot
@@ -92,6 +93,28 @@ export async function PUT(
       version += 1;
     }
 
+    // Renewal: an Overdue quote whose validity is extended to today or later is live again.
+    // Restore its last non-Overdue status (falls back to 'Sent') and log it in the status history.
+    const todayStr = new Date().toISOString().split('T')[0];
+    const newValidUntil: string | undefined = body.validUntil ?? existing.validUntil;
+    const wasOverdue = (body.status ?? existing.status) === 'Overdue';
+    const renewed = wasOverdue && Boolean(newValidUntil) && newValidUntil! >= todayStr;
+    const renewal: Record<string, unknown> = {};
+    if (renewed) {
+      const history = existing.statusHistory || [];
+      const previous = [...history].reverse().find((h) => h.status !== 'Overdue' && h.status !== 'Draft');
+      const restored: QuoteStatus = previous?.status ?? 'Sent';
+      renewal.status = restored;
+      renewal.statusHistory = [
+        ...(body.statusHistory || history),
+        {
+          status: restored,
+          timestamp: new Date().toISOString(),
+          note: `Renewed: validity extended to ${newValidUntil}`,
+        },
+      ];
+    }
+
     const updated = await store.updateQuote(id, {
       ...body,
       lineItems,
@@ -99,6 +122,7 @@ export async function PUT(
       totals,
       version,
       versionHistory,
+      ...renewal,
     });
 
     return NextResponse.json({ success: true, quote: updated });
